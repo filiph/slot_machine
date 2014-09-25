@@ -19,6 +19,11 @@ void main() {
   computeSlotMachineProbability(setup);
 }
 
+List<num> getSlotLineProbabilitiesFromSetup(List<List<bool>> setup) {
+  return new List<num>.from(setup.map((List<bool> line) => line.where((v) => v).length / line.length));
+}
+
+
 /// Computes probabilities of success and failure depending on setup.
 void computeSlotMachineProbability(List<List<bool>> setup) {
   List<int> outcomes = _generatePossibleOutcomes(setup);

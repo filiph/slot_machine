@@ -8,7 +8,7 @@ void main() {
   querySelector("#sample_text_id").onClick.listen((_) {
     container.children.clear();
 
-    var slotMachine = new SlotMachineAnimation(0.6, width: 40);
+    var slotMachine = new SlotMachineAnimation([0.6, 0.4, 0.5, 1.0, 0.1]);
     container.append(slotMachine.canvasEl);
     container.append(slotMachine.resultEl);
     slotMachine.roll()
@@ -18,22 +18,23 @@ void main() {
 
 
 class SlotMachineAnimation {
-  SlotMachineAnimation(this.probability, {this.slots: 5, this.width: 20}) {
-    canvasEl = new CanvasElement(width: width * slots, height: width * 3);
-//    canvasEl.style.border = "1px solid red";
-    _ctx = canvasEl.context2D;
+  SlotMachineAnimation(List<num> linesProbabilities, 
+      {this.slotLines: 5, this.width: 40}) {
+    assert(linesProbabilities.length == slotLines);
     height = width;
     
+    canvasEl = new CanvasElement(width: width * slotLines, height: width * 3);
+    _ctx = canvasEl.context2D;
     resultEl = new SpanElement();
     
-    _lines = new List<_SlotMachineLine>(slots);
-    for (int i = 0; i < slots; i += 1) {
-      _lines[i] = new _SlotMachineLine(probability, _ctx, i * width,
+    _lines = new List<_SlotMachineLine>(slotLines);
+    for (int i = 0; i < slotLines; i += 1) {
+      _lines[i] = new _SlotMachineLine(linesProbabilities[i], _ctx, i * width,
           width, height);
     }
-    currentResults = new List<bool>(slots);
+    currentResults = new List<bool>(slotLines);
     
-    if (slots % 2 == 0) {
+    if (slotLines % 2 == 0) {
       throw new ArgumentError("Slots need to be an odd number.");
     }
     
@@ -44,11 +45,11 @@ class SlotMachineAnimation {
     _gradient.addColorStop(0.8, 'rgba(255,255,255,0)');
     _gradient.addColorStop(1, 'rgba(255,255,255,1)');
   }
-  final int slots;
+  final int slotLines;
   final int width;
   int height;
 
-  final num probability;
+//  final num probability;
   int result;
   
   CanvasElement canvasEl;
@@ -90,7 +91,7 @@ class SlotMachineAnimation {
       return;
     }
     
-    for (int i = 0; i < slots; i++) {
+    for (int i = 0; i < slotLines; i++) {
       _SlotMachineLine line = _lines[i];
       currentResults[i] = line.currentResult;
       if (_timeFromStartOfRoll != null &&
@@ -102,7 +103,7 @@ class SlotMachineAnimation {
     
     // Draw the gradient overlay.
     _ctx.fillStyle = _gradient;
-    _ctx.fillRect(0, 0, width * slots, height * 3);
+    _ctx.fillRect(0, 0, width * slotLines, height * 3);
     
     resultEl.text = currentResultText;
     
@@ -118,9 +119,9 @@ class SlotMachineAnimation {
     if (currentResults.any((result) => result == null)) return "";
     int positives = currentResults
         .fold(0, (int sum, bool result) => sum += result ? 1 : 0);
-    int negatives = slots - positives;
-    if (positives == slots) return CRITICAL_SUCCESS;
-    if (negatives == slots) return CRITICAL_FAILURE;
+    int negatives = slotLines - positives;
+    if (positives == slotLines) return CRITICAL_SUCCESS;
+    if (negatives == slotLines) return CRITICAL_FAILURE;
     if (positives > negatives) return SUCCESS;
     if (positives < negatives) return FAILURE;
     // Slots are always odd.
@@ -159,9 +160,16 @@ class _SlotMachineLine {
   
   _SlotMachineLine(this.probability, this._ctx, this.leftOffset,
       this.width, this.height) {
-    _values = new List<bool>(SLOT_COUNT);
-    for (int i = 0; i < SLOT_COUNT; i += 1) {
-      _values[i] = _random.nextDouble() < probability;
+    _values = new List<bool>.filled(SLOT_COUNT, false);
+    
+    int successValuesTarget = (SLOT_COUNT * probability).round();
+    int successValuesCurrent = 0;
+    while (successValuesCurrent < successValuesTarget) {
+      int index = _random.nextInt(SLOT_COUNT);
+      if (_values[index] == false) {
+        _values[index] = true;
+        successValuesCurrent += 1;
+      }
     }
    
     fullSpeedMilliseconds = _random.nextInt(2000);
