@@ -8,7 +8,7 @@ void main() {
   querySelector("#sample_text_id").onClick.listen((_) {
     container.children.clear();
 
-    var slotMachine = new SlotMachineAnimation([0.8, 0.5, 0.7, 0.6, 0.6]);
+    var slotMachine = new SlotMachineAnimation([0.5, 0.7, 0.5, 0.5, 0.6]);
     container.append(slotMachine.canvasEl);
     container.append(slotMachine.resultEl);
     slotMachine.roll()
@@ -75,12 +75,12 @@ class SlotMachineAnimation {
   }
   
   num last_t = 0;
-  num _timeFromStartOfRoll;
+  num _timeOfStartOfRoll;
   List<bool> currentResults;
   
   void update(num timeFromStartOfPage) {
-    if (_timeFromStartOfRoll == null && timeFromStartOfPage != 0) {
-      _timeFromStartOfRoll = timeFromStartOfPage;
+    if (_timeOfStartOfRoll == null && timeFromStartOfPage != 0) {
+      _timeOfStartOfRoll = timeFromStartOfPage;
     }
     num dt = timeFromStartOfPage - last_t;
     last_t = timeFromStartOfPage;
@@ -94,8 +94,8 @@ class SlotMachineAnimation {
     for (int i = 0; i < slotLines; i++) {
       _SlotMachineLine line = _lines[i];
       currentResults[i] = line.currentResult;
-      if (_timeFromStartOfRoll != null &&
-          last_t - _timeFromStartOfRoll > line.fullSpeedMilliseconds) {
+      if (_timeOfStartOfRoll != null &&
+          last_t - _timeOfStartOfRoll > line.fullSpeedMilliseconds) {
         line.isSlowingDown = true;
       }
       line.update(dt);
@@ -104,6 +104,12 @@ class SlotMachineAnimation {
     // Draw the gradient overlay.
     _ctx.fillStyle = _gradient;
     _ctx.fillRect(0, 0, width * slotLines, height * 3);
+    
+    // Fade in.
+    if (_timeOfStartOfRoll != null && last_t - _timeOfStartOfRoll < 1000) {
+      _ctx.fillStyle = "rgba(255, 255, 255, ${1 - (last_t - _timeOfStartOfRoll) / 1000})";
+      _ctx.fillRect(0, 0, width * slotLines, height * 3);
+    }
     
     resultEl.text = currentResultText;
     
