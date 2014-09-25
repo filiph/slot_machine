@@ -3,19 +3,125 @@ import 'dart:async';
 import 'dart:math';
 
 void main() {
-  var slotMachine = new SlotMachineAnimation(0.6, width: 40);
+  var container = querySelector("#slot_container");
   
-  var container = querySelector("#sample_container_id");
+  querySelector("#sample_text_id").onClick.listen((_) {
+    container.children.clear();
+
+    var slotMachine = new SlotMachineAnimation(0.6, width: 40);
+    container.append(slotMachine.canvasEl);
+    container.append(slotMachine.resultEl);
+    slotMachine.roll()
+    .then(print);
+  });
   
-  container.append(slotMachine.canvasEl);
-  container.append(slotMachine.resultEl);
-  slotMachine.roll();
+  var setup = [
+               [true, true, true, true, true, true, true, true, true, true],
+               [true, true, true, true, true, true, true, true, true, true],
+               [true, true, true, true, true, true, true, true, true, true],
+               [true, true, true, true, true, true, true, true, true, true],
+               [true, true, true, true, true, true, true, true, true, true],
+               [true, true, true, true, true, true, true, true, true, true],
+               [true, true, true, true, true, true, true, true, true, true],
+               [true, true, true, true, true, true, true, true, true, true],
+               [true, true, true, true, true, true, true, true, true, true],
+               [true, true, true, true, true, true, true, true, true, true]
+  ];
+  
+  computeSlotMachineProbability(5, 20, 0.5);
+  
+//  print(findSlotLineProbability(0.8, slotCount: 20, delta: 0.05));
+}
+
+/// Computes probabilities of success and failure depending on setup.
+void computeSlotMachineProbability(int slotLinesCount, int slotCount, 
+                                   num slotLineProbability) {
+  List<int> outcomes = _generatePossibleOutcomes(slotLinesCount, slotCount,
+      slotLineProbability);
+  
+  int count = outcomes.length;
+  int criticalSuccesses = outcomes.where((o) => o == slotLinesCount).length;
+  int successes = outcomes.where((o) => o > 0).length;
+  int failures = outcomes.where((o) => o < 0).length;
+  int criticalFailures = outcomes.where((o) => o == -slotLinesCount).length;
+  
+  print("Successes:           $successes\t(${successes / count})");
+  print("Failures:            $failures\t(${failures / count})");
+  print("Critical Successes:  $successes\t(${criticalSuccesses / count})");
+  print("Critical Failures:   $successes\t(${criticalFailures / count})");
+}
+
+num findSlotLineProbability(num desiredWholeProbability, {num delta: 0.1, 
+      int maxTries: 100, int slotLinesCount: 5, int slotCount: 10}) {
+  if (desiredWholeProbability == 0) return 0;
+  if (desiredWholeProbability == 1.0) return 1.0;
+  num a = 0;
+  num outcomeA = 0;
+  num b = 1.0;
+  num outcomeB = 1.0;
+  num middle;
+  int tries = 0;
+  
+  do {
+    middle = (a + b) / 2;
+    List<int> outcomes = _generatePossibleOutcomes(slotLinesCount, slotCount,
+          middle);
+    int middleSuccesses = outcomes.where((o) => o > 0).length;
+    num middleWholeProbability = middleSuccesses / outcomes.length;
+    print("$middle => $middleWholeProbability");
+    
+    num middleDelta = (middleWholeProbability - desiredWholeProbability).abs();
+    if (middleDelta < delta) {
+      return middle;
+    }
+    num outcomeADelta = (outcomeA - desiredWholeProbability).abs();
+    num outcomeBDelta = (outcomeB - desiredWholeProbability).abs();
+    
+    if (outcomeADelta < outcomeBDelta) {
+      b = middle;
+      outcomeB = middleWholeProbability;
+    } else {
+      a = middle;
+      outcomeA = middleWholeProbability;
+    }
+    
+    tries += 1;
+  } while (tries < maxTries);
+  
+  print("Too many tries.");
+  return middle;
+}
+
+List<int> _generatePossibleOutcomes(int slotLinesCount, int slotCount, 
+                                    num slotLineProbability) {
+  // Compute first slot line's successes.
+  int successes = (slotCount * slotLineProbability).round();
+  List<int> thisLineOutcomes = new List(slotCount);
+  Random rand = new Random();
+  for (int i = 0; i < slotCount; i++) {
+//    thisLineOutcomes[i] = i < successes ? 1 : -1;
+    thisLineOutcomes[i] = rand.nextDouble() < slotLineProbability ? 1 : -1;
+  }
+  
+  if (slotLinesCount == 1) {
+    return thisLineOutcomes;
+  }
+  
+  List<int> wholeOutcomes = new List<int>();
+  
+  thisLineOutcomes.forEach((int outcome) {
+    _generatePossibleOutcomes(slotLinesCount - 1, slotCount, 
+        slotLineProbability).forEach((rightOutcome) {
+      wholeOutcomes.add(outcome + rightOutcome);
+    });
+  });
+  return wholeOutcomes;
 }
 
 class SlotMachineAnimation {
   SlotMachineAnimation(this.probability, {this.slots: 5, this.width: 20}) {
     canvasEl = new CanvasElement(width: width * slots, height: width * 3);
-    canvasEl.style.border = "1px solid red";
+//    canvasEl.style.border = "1px solid red";
     _ctx = canvasEl.context2D;
     height = width;
     
@@ -31,6 +137,13 @@ class SlotMachineAnimation {
     if (slots % 2 == 0) {
       throw new ArgumentError("Slots need to be an odd number.");
     }
+    
+    // Prepare gradient
+    _gradient = _ctx.createLinearGradient(0, 0, 0, canvasEl.height);
+    _gradient.addColorStop(0, 'rgba(255,255,255,1)');
+    _gradient.addColorStop(0.2, 'rgba(255,255,255,0)');
+    _gradient.addColorStop(0.8, 'rgba(255,255,255,0)');
+    _gradient.addColorStop(1, 'rgba(255,255,255,1)');
   }
   final int slots;
   final int width;
@@ -42,17 +155,19 @@ class SlotMachineAnimation {
   CanvasElement canvasEl;
   CanvasRenderingContext2D _ctx;
   
+  CanvasGradient _gradient;
+  
   SpanElement resultEl;
   
   List<_SlotMachineLine> _lines;
   
-  Completer<int> _rollCompleter;
+  Completer<String> _rollCompleter;
   
-  Future<int> roll() {
+  Future<String> roll() {
     if (_rollCompleter != null) {
       throw new StateError("Cannot roll one slot machine twice.");
     }
-    _rollCompleter = new Completer<int>();
+    _rollCompleter = new Completer<String>();
     
     update(0);
     
@@ -60,49 +175,68 @@ class SlotMachineAnimation {
   }
   
   num last_t = 0;
+  num _timeFromStartOfRoll;
   List<bool> currentResults;
   
-  void update(num dt) {
-//    clear();
+  void update(num timeFromStartOfPage) {
+    if (_timeFromStartOfRoll == null && timeFromStartOfPage != 0) {
+      _timeFromStartOfRoll = timeFromStartOfPage;
+    }
+    num dt = timeFromStartOfPage - last_t;
+    last_t = timeFromStartOfPage;
+    
+    if (_lines.every((line) => line.isFinished)) {
+      resultEl.text = currentResultText;
+      _rollCompleter.complete(currentResultText);
+      return;
+    }
     
     for (int i = 0; i < slots; i++) {
       _SlotMachineLine line = _lines[i];
       currentResults[i] = line.currentResult;
-      if (line.isFinished) continue;
-      if (last_t > line.fullSpeedMilliseconds) line.isSlowingDown = true;
+      if (_timeFromStartOfRoll != null &&
+          last_t - _timeFromStartOfRoll > line.fullSpeedMilliseconds) {
+        line.isSlowingDown = true;
+      }
       line.update(dt);
     }
     
+    // Draw the gradient overlay.
+    _ctx.fillStyle = _gradient;
+    _ctx.fillRect(0, 0, width * slots, height * 3);
+    
     resultEl.text = currentResultText;
     
-    window.animationFrame.then((num timeFromStart) {
-      num dt = timeFromStart - last_t;
-      last_t = timeFromStart;
-      update(dt);
-    });
+    window.animationFrame.then(update);
   }
+  
+  static const String CRITICAL_SUCCESS = "critical success";
+  static const String SUCCESS = "success";
+  static const String FAILURE = "failure";
+  static const String CRITICAL_FAILURE = "critical failure";
   
   String get currentResultText {
     if (currentResults.any((result) => result == null)) return "";
     int positives = currentResults
         .fold(0, (int sum, bool result) => sum += result ? 1 : 0);
     int negatives = slots - positives;
-    if (positives == slots) return "critical success";
-    if (negatives == slots) return "critical fail";
-    if (positives > negatives) return "success";
-    if (positives < negatives) return "fail";
+    if (positives == slots) return CRITICAL_SUCCESS;
+    if (negatives == slots) return CRITICAL_FAILURE;
+    if (positives > negatives) return SUCCESS;
+    if (positives < negatives) return FAILURE;
     // Slots are always odd.
+    throw new StateError("Cannot decide success or fail.");
   }
   
-  void clear() {
-//    _ctx.clearRect(0, 0, width * slots, height * 3);
-    _ctx.fillStyle = '#ffffff';
-    _ctx.fillRect(0, 0, width * slots, height * 3);
-    
-//    _ctx.rect(0, 0, width * slots, height * 3);
-//    _ctx.fillStyle = 'white';
-//    _ctx.fill();
-  }
+//  void clear() {
+////    _ctx.clearRect(0, 0, width * slots, height * 3);
+//    _ctx.fillStyle = '#ffffff';
+//    _ctx.fillRect(0, 0, width * slots, height * 3);
+//    
+////    _ctx.rect(0, 0, width * slots, height * 3);
+////    _ctx.fillStyle = 'white';
+////    _ctx.fill();
+//  }
   
   static const int CRITICAL_HIT = 2;
   static const int HIT = 1;
@@ -132,6 +266,10 @@ class _SlotMachineLine {
     }
    
     fullSpeedMilliseconds = _random.nextInt(2000);
+    
+    // Fail otherwise, because our assets are 40x40.
+    assert(width == 40);
+    assert(height == 40);
   }
   
   num topOffset = 0;
@@ -140,6 +278,11 @@ class _SlotMachineLine {
   bool isSlowingDown = false;
   bool isFinished = false;
   
+  final CanvasImageSource successSource= 
+      new ImageElement(src: "img/slot-success.gif", width: 40, height: 40);
+  final CanvasImageSource failureSource = 
+      new ImageElement(src: "img/slot-failure.gif", width: 40, height: 40);
+  
   num _pos = 0;
   
   bool currentResult;
@@ -147,19 +290,19 @@ class _SlotMachineLine {
   List<bool> _values;
   
   void drawSquare(num topOffset, bool value) {
-    _ctx.fillStyle = value ? 'green' : 'red';
+//    _ctx.fillStyle = value ? 'green' : 'red';
     //    ctx.setFillColorRgb(255, 0, 0);
-    _ctx.fillRect(leftOffset, topOffset, width, height);
+//    _ctx.fillRect(leftOffset, topOffset, width, height);
+    
+    _ctx.drawImage(value ? successSource : failureSource, 
+        leftOffset, topOffset);
   }
   
   void update(num dt) {
-    if (isFinished) return;
-    
-    if (isSlowingDown) {
+    if (isSlowingDown && !isFinished) {
       if (speed <= 0.001) {
         if ((_pos % height).abs() < height / 20) {
           speed = 0;
-          isSlowingDown = false;
           isFinished = true;
         }
       } else {
@@ -167,7 +310,11 @@ class _SlotMachineLine {
       }
     }
     
-    _pos += (dt * speed * height);
+    clear();
+    
+    if (!isFinished) {
+      _pos += (dt * speed * height);
+    }
     num normalizedPos = _pos % (height * SLOT_COUNT);
     
     int topIndex = (normalizedPos / height).floor();
@@ -177,5 +324,11 @@ class _SlotMachineLine {
       drawSquare((normalizedPos % height) - height + (height * i), 
           _values[index % SLOT_COUNT]);
     }
+    
+  }
+  
+  void clear() {
+    _ctx.fillStyle = '#ffffff';
+    _ctx.fillRect(leftOffset, 0, width, height * 3);
   }
 }
