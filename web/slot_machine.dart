@@ -8,7 +8,7 @@ void main() {
   querySelector("#sample_text_id").onClick.listen((_) {
     container.children.clear();
 
-    var slotMachine = new SlotMachineAnimation([0.6, 0.4, 0.5, 1.0, 0.1]);
+    var slotMachine = new SlotMachineAnimation([0.8, 0.5, 0.7, 0.6, 0.6]);
     container.append(slotMachine.canvasEl);
     container.append(slotMachine.resultEl);
     slotMachine.roll()
@@ -41,8 +41,8 @@ class SlotMachineAnimation {
     // Prepare gradient
     _gradient = _ctx.createLinearGradient(0, 0, 0, canvasEl.height);
     _gradient.addColorStop(0, 'rgba(255,255,255,1)');
-    _gradient.addColorStop(0.2, 'rgba(255,255,255,0)');
-    _gradient.addColorStop(0.8, 'rgba(255,255,255,0)');
+    _gradient.addColorStop(0.3, 'rgba(255,255,255,0)');
+    _gradient.addColorStop(0.7, 'rgba(255,255,255,0)');
     _gradient.addColorStop(1, 'rgba(255,255,255,1)');
   }
   final int slotLines;
@@ -149,6 +149,7 @@ class SlotMachineAnimation {
 
 class _SlotMachineLine {
   static const int SLOT_COUNT = 10;
+  static const int MIN_FULL_SPEED_MILLISECONDS = 500;
   static final Random _random = new Random();
   
   final num probability;
@@ -172,7 +173,8 @@ class _SlotMachineLine {
       }
     }
    
-    fullSpeedMilliseconds = _random.nextInt(2000);
+    fullSpeedMilliseconds = MIN_FULL_SPEED_MILLISECONDS + _random.nextInt(2000);
+    speed += speed * (_random.nextDouble() / 10);
     
     // Fail otherwise, because our assets are 40x40.
     assert(width == 40);

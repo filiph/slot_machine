@@ -11,18 +11,56 @@ void main() {
   //               [true, true, true, true, true, true, true, true, true, true]
   //  ];
 
-  num desiredProbability = 0.55;
-  print("Finding setup for desired probability $desiredProbability.");
-  var setup = findSlotLineSetup(desiredProbability, slotCount: 10);
+//  for (int desiredPctPoints = 0; desiredPctPoints <= 100; 
+//      desiredPctPoints += 5) {
+//    num desiredProbability = desiredPctPoints / 100;
+//    print("Finding setup for desired probability $desiredProbability.");
+//    var setup = findSlotLineSetup(desiredProbability, slotCount: 10);
+//    
+//    print(setup);
+//    print(getSlotLineProbabilitiesFromSetup(setup));
+//    computeSlotMachineProbability(setup);    
+//  }
   
-  print(setup);
-  computeSlotMachineProbability(setup);
+  
+  // Brute force
+  List<num> probabilities = new List<num>();
+  for (num probabilityOfSuccessSlot = 0; probabilityOfSuccessSlot <= 1.0; 
+      probabilityOfSuccessSlot += 0.001) {
+    print("===");
+    print("Creating random setup for desired probability $probabilityOfSuccessSlot.");
+    var setup = createRandomSetup(probabilityOfSuccessSlot, 5, 10);
+    
+    var probSuccess = _getSuccessProbability(setup);
+    probabilities.add(probSuccess);
+    print("Probability = $probSuccess");
+    print(setup);
+    print(getSlotLineProbabilitiesFromSetup(setup));
+    computeSlotMachineProbability(setup);    
+  }
+  
+  probabilities.sort();
+  print(probabilities);
+  
+}
+
+List<List<bool>> createRandomSetup(num probabilityOfSuccessSlot, 
+    int slotLinesCount, int slotCount) {
+  Random random = new Random();
+  List<List<bool>> setup = new List(slotLinesCount);
+  for (int i = 0; i < slotLinesCount; i++) {
+    setup[i] = new List<bool>.filled(slotCount, false);
+    for (int j = 0; j < slotCount; j++) {
+      setup[i][j] = random.nextDouble() < probabilityOfSuccessSlot;
+    }
+  }
+  
+  return setup;
 }
 
 List<num> getSlotLineProbabilitiesFromSetup(List<List<bool>> setup) {
   return new List<num>.from(setup.map((List<bool> line) => line.where((v) => v).length / line.length));
 }
-
 
 /// Computes probabilities of success and failure depending on setup.
 void computeSlotMachineProbability(List<List<bool>> setup) {
@@ -44,7 +82,7 @@ void computeSlotMachineProbability(List<List<bool>> setup) {
 }
 
 List<List<bool>> findSlotLineSetup(num desiredProbability, 
-    {int slotLinesCount: 5, int slotCount: 10, int maxTries: 1000,
+    {int slotLinesCount: 5, int slotCount: 10, int maxTries: 100,
      num delta: 0.01}) {
   bool fillValue;
   num currentProbability;
@@ -74,7 +112,6 @@ List<List<bool>> findSlotLineSetup(num desiredProbability,
     } else {
       setup[i] = new List<bool>.filled(slotCount, fillValue);
     }
-    
   }
   
   if (desiredProbability < delta || desiredProbability > 1.0 - delta ||
@@ -86,8 +123,8 @@ List<List<bool>> findSlotLineSetup(num desiredProbability,
   
   while (tries > 0) {
     tries -= 1;
-    print(setup);
-    print(currentProbability);
+//    print(setup);
+//    print(currentProbability);
     
     bool boolValueToFlip = desiredProbability > currentProbability;
     
@@ -116,7 +153,7 @@ List<List<bool>> findSlotLineSetup(num desiredProbability,
     if (newDelta <= currentDelta) {
       // More successful.
       if (newDelta < delta) {
-        print("Delta is sufficiently small ($newDelta vs $delta)");
+//        print("Delta is sufficiently small ($newDelta vs $delta)");
         return setup;
       }
       currentProbability = newProbability;
