@@ -18,26 +18,20 @@ void main() {
   var setup = [
                [true, true, true, true, true, true, true, true, true, true],
                [true, true, true, true, true, true, true, true, true, true],
-               [true, true, true, true, true, true, true, true, true, true],
-               [true, true, true, true, true, true, true, true, true, true],
-               [true, true, true, true, true, true, true, true, true, true],
-               [true, true, true, true, true, true, true, true, true, true],
-               [true, true, true, true, true, true, true, true, true, true],
-               [true, true, true, true, true, true, true, true, true, true],
+               [true, true, true, true, false, true, true, true, true, true],
                [true, true, true, true, true, true, true, true, true, true],
                [true, true, true, true, true, true, true, true, true, true]
   ];
   
-  computeSlotMachineProbability(5, 20, 0.5);
+  computeSlotMachineProbability(setup, 5, 10);
   
-//  print(findSlotLineProbability(0.8, slotCount: 20, delta: 0.05));
+  print(findSlotLineProbability(setup, 0.8, delta: 0.05));
 }
 
 /// Computes probabilities of success and failure depending on setup.
-void computeSlotMachineProbability(int slotLinesCount, int slotCount, 
-                                   num slotLineProbability) {
-  List<int> outcomes = _generatePossibleOutcomes(slotLinesCount, slotCount,
-      slotLineProbability);
+void computeSlotMachineProbability(List<List<bool>> setup, 
+                                   int slotLinesCount, int slotCount) {
+  List<int> outcomes = _generatePossibleOutcomes(setup);
   
   int count = outcomes.length;
   int criticalSuccesses = outcomes.where((o) => o == slotLinesCount).length;
@@ -47,12 +41,13 @@ void computeSlotMachineProbability(int slotLinesCount, int slotCount,
   
   print("Successes:           $successes\t(${successes / count})");
   print("Failures:            $failures\t(${failures / count})");
-  print("Critical Successes:  $successes\t(${criticalSuccesses / count})");
-  print("Critical Failures:   $successes\t(${criticalFailures / count})");
+  print("Critical Successes:  $criticalSuccesses\t(${criticalSuccesses / count})");
+  print("Critical Failures:   $criticalFailures\t(${criticalFailures / count})");
 }
 
-num findSlotLineProbability(num desiredWholeProbability, {num delta: 0.1, 
-      int maxTries: 100, int slotLinesCount: 5, int slotCount: 10}) {
+num findSlotLineProbability(List<List<bool>> initialSetup, 
+                            num desiredWholeProbability, {num delta: 0.1, 
+                            int maxTries: 100}) {
   if (desiredWholeProbability == 0) return 0;
   if (desiredWholeProbability == 1.0) return 1.0;
   num a = 0;
@@ -92,26 +87,23 @@ num findSlotLineProbability(num desiredWholeProbability, {num delta: 0.1,
   return middle;
 }
 
-List<int> _generatePossibleOutcomes(int slotLinesCount, int slotCount, 
-                                    num slotLineProbability) {
+List<int> _generatePossibleOutcomes(List<List<bool>> setup, 
+    {int leftOffset: 0}) {
   // Compute first slot line's successes.
-  int successes = (slotCount * slotLineProbability).round();
-  List<int> thisLineOutcomes = new List(slotCount);
-  Random rand = new Random();
-  for (int i = 0; i < slotCount; i++) {
-//    thisLineOutcomes[i] = i < successes ? 1 : -1;
-    thisLineOutcomes[i] = rand.nextDouble() < slotLineProbability ? 1 : -1;
-  }
+  int slotLinesCount = setup.length;
+  int slotCount = setup[0].length;
+  List<int> thisLineOutcomes = 
+      new List<int>.from(setup[leftOffset].map((b) => b ? 1 : -1));
   
-  if (slotLinesCount == 1) {
+  if (leftOffset == slotLinesCount - 1) {
     return thisLineOutcomes;
   }
   
   List<int> wholeOutcomes = new List<int>();
   
   thisLineOutcomes.forEach((int outcome) {
-    _generatePossibleOutcomes(slotLinesCount - 1, slotCount, 
-        slotLineProbability).forEach((rightOutcome) {
+    _generatePossibleOutcomes(setup, leftOffset: leftOffset + 1)
+    .forEach((rightOutcome) {
       wholeOutcomes.add(outcome + rightOutcome);
     });
   });
