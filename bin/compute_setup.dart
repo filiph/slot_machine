@@ -1,15 +1,9 @@
 
 import 'dart:math';
-
+import 'package:slot_machine/precomputed_setups.dart' show findClosest;
 
 void main() {
-  //  var setup = [
-  //               [true, true, true, true, true, true, true, true, true, true],
-  //               [true, true, true, true, true, true, true, true, true, true],
-  //               [true, true, true, true, false, true, true, true, true, true],
-  //               [true, true, true, true, true, true, true, true, true, true],
-  //               [true, true, true, true, true, true, true, true, true, true]
-  //  ];
+
 
 //  for (int desiredPctPoints = 0; desiredPctPoints <= 100; 
 //      desiredPctPoints += 5) {
@@ -24,25 +18,35 @@ void main() {
   
   
   // Brute force
-  List<num> probabilities = new List<num>();
+  Map<num,List<num>> probabilities = new Map<num,List<num>>();
   for (num probabilityOfSuccessSlot = 0; probabilityOfSuccessSlot <= 1.0; 
-      probabilityOfSuccessSlot += 0.001) {
+      probabilityOfSuccessSlot += 0.0001) {
     print("===");
-    print("Creating random setup for desired probability $probabilityOfSuccessSlot.");
+    print("Creating random setup for slot probability $probabilityOfSuccessSlot.");
     var setup = createRandomSetup(probabilityOfSuccessSlot, 5, 10);
     
     var probSuccess = _getSuccessProbability(setup);
-    probabilities.add(probSuccess);
+    //probSuccess = (probSuccess * 100).round() / 100;
+    if (probabilities.containsKey(probSuccess)) continue;
+    
+    probabilities[probSuccess] = getSlotLineProbabilitiesFromSetup(setup);
     print("Probability = $probSuccess");
-    print(setup);
-    print(getSlotLineProbabilitiesFromSetup(setup));
-    computeSlotMachineProbability(setup);    
   }
   
-  probabilities.sort();
-  print(probabilities);
+  var keys = probabilities.keys.toList();
+  keys.sort();
+  print(keys);
   
+  int step = 5;
+  for (int target = 0; target <= 100; target += step) {
+    num closest = findClosest(target / 100, keys);
+    print("${target / 100}: ${probabilities[closest]},");
+  }
+  
+  print(probabilities);
 }
+
+
 
 List<List<bool>> createRandomSetup(num probabilityOfSuccessSlot, 
     int slotLinesCount, int slotCount) {
