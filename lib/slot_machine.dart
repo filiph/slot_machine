@@ -8,8 +8,7 @@ import 'package:slot_machine/precomputed_setups.dart' show getPrecomputedSetup;
 
 
 class SlotMachineAnimation {
-  SlotMachineAnimation(List<num> linesProbabilities, 
-      {this.slotLines: 5, this.width: 40}) {
+  SlotMachineAnimation(List<num> linesProbabilities) {
     assert(linesProbabilities.length == slotLines);
     height = width;
     
@@ -31,8 +30,10 @@ class SlotMachineAnimation {
     // Prepare gradient
     _gradient = _ctx.createLinearGradient(0, 0, 0, canvasEl.height);
     _gradient.addColorStop(0, 'rgba(255,255,255,1)');
-    _gradient.addColorStop(0.3, 'rgba(255,255,255,0)');
-    _gradient.addColorStop(0.7, 'rgba(255,255,255,0)');
+    _gradient.addColorStop(0.1, 'rgba(255,255,255,1)');
+    _gradient.addColorStop(0.4, 'rgba(255,255,255,0)');
+    _gradient.addColorStop(0.6, 'rgba(255,255,255,0)');
+    _gradient.addColorStop(0.9, 'rgba(255,255,255,1)');
     _gradient.addColorStop(1, 'rgba(255,255,255,1)');
   }
   
@@ -40,12 +41,12 @@ class SlotMachineAnimation {
     return new SlotMachineAnimation(getPrecomputedSetup(probability));
   }
   
-  final int slotLines;
-  final int width;
+  final int slotLines = 5;
+  final int width = 40;
   int height;
 
-//  final num probability;
-  int result;
+  bool allowCriticalSuccess = true;
+  bool allowCriticalFailure = true;
   
   CanvasElement canvasEl;
   CanvasRenderingContext2D _ctx;
@@ -74,11 +75,14 @@ class SlotMachineAnimation {
   num _timeOfStartOfRoll;
   List<bool> currentResults;
   
+  static const num MAXIMUM_DT = 1000 / 30;
+  
   void update(num timeFromStartOfPage) {
     if (_timeOfStartOfRoll == null && timeFromStartOfPage != 0) {
       _timeOfStartOfRoll = timeFromStartOfPage;
     }
     num dt = timeFromStartOfPage - last_t;
+    if (dt > MAXIMUM_DT) dt = MAXIMUM_DT;  // Disallow huge dt steps.
     last_t = timeFromStartOfPage;
     
     if (_lines.every((line) => line.isFinished)) {
@@ -124,31 +128,15 @@ class SlotMachineAnimation {
     int positives = currentResults
         .fold(0, (int sum, bool result) => sum += result ? 1 : 0);
     int negatives = slotLines - positives;
-    if (positives == slotLines) return CRITICAL_SUCCESS;
-    if (negatives == slotLines) return CRITICAL_FAILURE;
+    if (allowCriticalSuccess && positives == slotLines) return CRITICAL_SUCCESS;
+    if (allowCriticalFailure && negatives == slotLines) return CRITICAL_FAILURE;
     if (positives > negatives) return SUCCESS;
     if (positives < negatives) return FAILURE;
     // Slots are always odd.
     throw new StateError("Cannot decide success or fail.");
   }
   
-//  void clear() {
-////    _ctx.clearRect(0, 0, width * slots, height * 3);
-//    _ctx.fillStyle = '#ffffff';
-//    _ctx.fillRect(0, 0, width * slots, height * 3);
-//    
-////    _ctx.rect(0, 0, width * slots, height * 3);
-////    _ctx.fillStyle = 'white';
-////    _ctx.fill();
-//  }
-  
-  static const int CRITICAL_HIT = 2;
-  static const int HIT = 1;
-  static const int FAIL = -1;
-  static const int CRITICAL_FAIL = -2;
-  
   // TODO: completedWithHit, completedWithFail ... getters
-  
 }
 
 class _SlotMachineLine {

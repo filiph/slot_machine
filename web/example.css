@@ -27,3 +27,9 @@ h1, p {
   -webkit-user-select: none;
   user-select: none;
 }
+
+#slot_result {
+  width: 200px;
+  text-align: center;
+  text-transform: uppercase;
+}
