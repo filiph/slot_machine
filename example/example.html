@@ -12,12 +12,13 @@
     <link rel="stylesheet" href="example.css">
   </head>
   <body>
-    <h1>Slot machine</h1>
-    
-    <p>Hello world from Dart!</p>
-    
     <div id="sample_container_id">
-      <p id="sample_text_id">Click me!</p>
+      <h1>Slot machine</h1>
+      <p>
+        Probability = <span id="probability_span">75%</span> 
+        <input id="probability" type="range" value="75" max="100" step="5">
+      </p>
+      <button id="start_button">Click me!</button>
       <div id="slot_container"></div>
       <p id="slot_result"></p>
     </div>

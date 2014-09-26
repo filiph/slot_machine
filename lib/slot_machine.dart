@@ -6,7 +6,15 @@ import 'dart:math';
 
 import 'package:slot_machine/precomputed_setups.dart' show getPrecomputedSetup;
 
-
+/// A class that creates the slot machine. 
+/// 
+/// It currently only creates slot machines with 5 slot lines, 10 images each.
+/// The slot machine is visualized through 2 DOM elements. [canvasEl] shows
+/// the slot machine itself, with rotating slots. [resultEl] is a span element
+/// that automatically populates with the current outcome in real time.
+/// 
+/// The SlotMachineAnimation is single-serving, i.e. it cannot be rolled more
+/// than once.
 class SlotMachineAnimation {
   SlotMachineAnimation(List<num> linesProbabilities) {
     assert(linesProbabilities.length == slotLines);
@@ -135,8 +143,6 @@ class SlotMachineAnimation {
     // Slots are always odd.
     throw new StateError("Cannot decide success or fail.");
   }
-  
-  // TODO: completedWithHit, completedWithFail ... getters
 }
 
 class _SlotMachineLine {

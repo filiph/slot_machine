@@ -1,4 +1,21 @@
+library slot_machine_precomputed_setups;
 
+/// Takes a probability of success that we want to see from the slot machine
+/// as a whole and returns precomputed setup that will create such slot machine.
+List<num> getPrecomputedSetup(num desiredProbability) {
+  num probability = desiredProbability * 100 / PRECISION_STEPS;  // ex. 6.4
+  probability = probability.round();  // ex. 6.0
+  probability *= PRECISION_STEPS;  // ex. 60
+  
+  return PRECOMPUTED_SETUPS[probability];
+}
+
+/// A map that was populated by running [:bin/compute_setup.dart:]. The setups
+/// will produce slot machines that will produce successes with the appropriate
+/// probability.
+/// 
+/// These setups hold true when number of slot lines is 5 and number of slots
+/// (images) per each line is 10.
 const Map<num,List<num>> PRECOMPUTED_SETUPS = const {
   0: const [0.0, 0.0, 0.0, 0.0, 0.0],
   5: const [0.2, 0.1, 0.4, 0.2, 0.1],
@@ -24,14 +41,6 @@ const Map<num,List<num>> PRECOMPUTED_SETUPS = const {
 };
 
 const PRECISION_STEPS = 5;
-
-List<num> getPrecomputedSetup(num desiredProbability) {
-  num probability = desiredProbability * 100 / PRECISION_STEPS;  // ex. 6.4
-  probability = probability.round();  // ex. 6.0
-  probability *= PRECISION_STEPS;  // ex. 60
-  
-  return PRECOMPUTED_SETUPS[probability];
-}
 
 /// Returns the number in the iterable that is closest to the target number. 
 /// When there are several numbers with the same delta to [target], the last
