@@ -8,3 +8,6 @@ packages/
 *.js_
 *.js.deps
 *.js.map
+
+# Or Mac dictionary files
+.DS_Store
