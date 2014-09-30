@@ -27,7 +27,7 @@ class SlotMachineAnimation {
     _lines = new List<_SlotMachineLine>(slotLines);
     for (int i = 0; i < slotLines; i += 1) {
       _lines[i] = new _SlotMachineLine(linesProbabilities[i], _ctx, i * width,
-          width, height);
+          width, height, _successSource, _failureSource);
     }
     currentResults = new List<bool>(slotLines);
     
@@ -62,6 +62,13 @@ class SlotMachineAnimation {
   CanvasGradient _gradient;
   static const int FADE_IN_MILLISECONDS = 500;
   
+  final ImageElement _successSource = 
+      new ImageElement(src: "packages/slot_machine/img/slot-success.gif", 
+          width: 40, height: 40);
+  final ImageElement _failureSource = 
+      new ImageElement(src: "packages/slot_machine/img/slot-failure.gif", 
+          width: 40, height: 40);
+  
   SpanElement resultEl;
   
   List<_SlotMachineLine> _lines;
@@ -74,7 +81,10 @@ class SlotMachineAnimation {
     }
     _rollCompleter = new Completer<String>();
     
-    update(0);
+    Future.wait([_successSource.onLoad.first, _failureSource.onLoad.first])
+    .then((_) {
+      update(0);
+    });
     
     return _rollCompleter.future;
   }
@@ -158,7 +168,7 @@ class _SlotMachineLine {
   final CanvasRenderingContext2D _ctx;
   
   _SlotMachineLine(this.probability, this._ctx, this.leftOffset,
-      this.width, this.height) {
+      this.width, this.height, this.successSource, this.failureSource) {
     _values = new List<bool>.filled(SLOT_COUNT, false);
     
     int successValuesTarget = (SLOT_COUNT * probability).round();
@@ -185,12 +195,8 @@ class _SlotMachineLine {
   bool isSlowingDown = false;
   bool isFinished = false;
   
-  final CanvasImageSource successSource= 
-      new ImageElement(src: "packages/slot_machine/img/slot-success.gif", 
-          width: 40, height: 40);
-  final CanvasImageSource failureSource = 
-      new ImageElement(src: "packages/slot_machine/img/slot-failure.gif", 
-          width: 40, height: 40);
+  final CanvasImageSource successSource;
+  final CanvasImageSource failureSource;
   
   num _pos = 0;
   
