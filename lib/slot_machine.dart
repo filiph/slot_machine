@@ -1,7 +1,7 @@
 library slot_machine;
 
-import 'dart:html';
 import 'dart:async';
+import 'dart:html';
 import 'dart:math';
 
 import 'package:slot_machine/precomputed_setups.dart' show getPrecomputedSetup;
@@ -16,6 +16,44 @@ import 'package:slot_machine/precomputed_setups.dart' show getPrecomputedSetup;
 /// The SlotMachineAnimation is single-serving, i.e. it cannot be rolled more
 /// than once.
 class SlotMachineAnimation {
+  static const int FADE_IN_MILLISECONDS = 500;
+
+  static const num MAXIMUM_DT = 1000 / 30;
+
+  static const String CRITICAL_SUCCESS = "critical success";
+  static const String SUCCESS = "success";
+  static const String FAILURE = "failure";
+
+  static const String CRITICAL_FAILURE = "critical failure";
+  final int slotLines = 5;
+
+  final int width = 40;
+  int height;
+
+  final bool allowCriticalSuccess;
+  final bool allowCriticalFailure;
+
+  CanvasElement canvasEl;
+  CanvasRenderingContext2D _ctx;
+
+  CanvasGradient _gradient;
+
+  final ImageElement _successSource = new ImageElement(
+      src: "packages/slot_machine/img/slot-success.gif", width: 40, height: 40);
+
+  final ImageElement _failureSource = new ImageElement(
+      src: "packages/slot_machine/img/slot-failure.gif", width: 40, height: 40);
+
+  SpanElement resultEl;
+
+  List<_SlotMachineLine> _lines;
+  Completer<String> _rollCompleter;
+  num last_t = 0;
+
+  num _timeOfStartOfRoll;
+
+  List<bool> currentResults;
+
   SlotMachineAnimation(List<num> linesProbabilities,
       {this.allowCriticalSuccess, this.allowCriticalFailure}) {
     assert(linesProbabilities.length == slotLines);
@@ -45,34 +83,21 @@ class SlotMachineAnimation {
     _gradient.addColorStop(0.9, 'rgba(255,255,255,1)');
     _gradient.addColorStop(1, 'rgba(255,255,255,1)');
   }
-
   factory SlotMachineAnimation.fromProbability(num probability) {
     return new SlotMachineAnimation(getPrecomputedSetup(probability));
   }
-
-  final int slotLines = 5;
-  final int width = 40;
-  int height;
-
-  final bool allowCriticalSuccess;
-  final bool allowCriticalFailure;
-
-  CanvasElement canvasEl;
-  CanvasRenderingContext2D _ctx;
-
-  CanvasGradient _gradient;
-  static const int FADE_IN_MILLISECONDS = 500;
-
-  final ImageElement _successSource = new ImageElement(
-      src: "packages/slot_machine/img/slot-success.gif", width: 40, height: 40);
-  final ImageElement _failureSource = new ImageElement(
-      src: "packages/slot_machine/img/slot-failure.gif", width: 40, height: 40);
-
-  SpanElement resultEl;
-
-  List<_SlotMachineLine> _lines;
-
-  Completer<String> _rollCompleter;
+  String get currentResultText {
+    if (currentResults.any((result) => result == null)) return "";
+    int positives =
+        currentResults.fold(0, (int sum, bool result) => sum += result ? 1 : 0);
+    int negatives = slotLines - positives;
+    if (allowCriticalSuccess && positives == slotLines) return CRITICAL_SUCCESS;
+    if (allowCriticalFailure && negatives == slotLines) return CRITICAL_FAILURE;
+    if (positives > negatives) return SUCCESS;
+    if (positives < negatives) return FAILURE;
+    // Slots are always odd.
+    throw new StateError("Cannot decide success or fail.");
+  }
 
   Future<String> roll() {
     if (_rollCompleter != null) {
@@ -87,12 +112,6 @@ class SlotMachineAnimation {
 
     return _rollCompleter.future;
   }
-
-  num last_t = 0;
-  num _timeOfStartOfRoll;
-  List<bool> currentResults;
-
-  static const num MAXIMUM_DT = 1000 / 30;
 
   void update(num timeFromStartOfPage) {
     if (_timeOfStartOfRoll == null && timeFromStartOfPage != 0) {
@@ -134,24 +153,6 @@ class SlotMachineAnimation {
 
     window.animationFrame.then(update);
   }
-
-  static const String CRITICAL_SUCCESS = "critical success";
-  static const String SUCCESS = "success";
-  static const String FAILURE = "failure";
-  static const String CRITICAL_FAILURE = "critical failure";
-
-  String get currentResultText {
-    if (currentResults.any((result) => result == null)) return "";
-    int positives =
-        currentResults.fold(0, (int sum, bool result) => sum += result ? 1 : 0);
-    int negatives = slotLines - positives;
-    if (allowCriticalSuccess && positives == slotLines) return CRITICAL_SUCCESS;
-    if (allowCriticalFailure && negatives == slotLines) return CRITICAL_FAILURE;
-    if (positives > negatives) return SUCCESS;
-    if (positives < negatives) return FAILURE;
-    // Slots are always odd.
-    throw new StateError("Cannot decide success or fail.");
-  }
 }
 
 class _SlotMachineLine {
@@ -165,6 +166,21 @@ class _SlotMachineLine {
   final int height;
   num fullSpeedMilliseconds;
   final CanvasRenderingContext2D _ctx;
+
+  num topOffset = 0;
+
+  num speed = 0.01;
+  num drag = 0.0001;
+  bool isSlowingDown = false;
+  bool isFinished = false;
+  final CanvasImageSource successSource;
+
+  final CanvasImageSource failureSource;
+  num _pos = 0;
+
+  bool currentResult;
+
+  List<bool> _values;
 
   _SlotMachineLine(this.probability, this._ctx, this.leftOffset, this.width,
       this.height, this.successSource, this.failureSource) {
@@ -188,20 +204,10 @@ class _SlotMachineLine {
     assert(height == 40);
   }
 
-  num topOffset = 0;
-  num speed = 0.01;
-  num drag = 0.0001;
-  bool isSlowingDown = false;
-  bool isFinished = false;
-
-  final CanvasImageSource successSource;
-  final CanvasImageSource failureSource;
-
-  num _pos = 0;
-
-  bool currentResult;
-
-  List<bool> _values;
+  void clear() {
+    _ctx.fillStyle = '#ffffff';
+    _ctx.fillRect(leftOffset, 0, width, height * 3);
+  }
 
   void drawSquare(num topOffset, bool value) {
 //    _ctx.fillStyle = value ? 'green' : 'red';
@@ -238,10 +244,5 @@ class _SlotMachineLine {
       drawSquare((normalizedPos % height) - height + (height * i),
           _values[index % SLOT_COUNT]);
     }
-  }
-
-  void clear() {
-    _ctx.fillStyle = '#ffffff';
-    _ctx.fillRect(leftOffset, 0, width, height * 3);
   }
 }
