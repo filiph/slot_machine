@@ -89,7 +89,7 @@ class SlotMachineAnimation {
 
   List<_SlotMachineLine> _lines;
 
-  Completer<String> _rollCompleter;
+  Completer<Result> _rollCompleter;
 
   num _lastTime = 0;
 
@@ -150,27 +150,49 @@ class SlotMachineAnimation {
     _gradient.addColorStop(1, 'rgba(255,255,255,1)');
   }
 
-  String get _currentResultText {
-    if (_currentResults.any((result) => result == null)) return "";
+  Result get _currentResult {
+    if (_currentResults.any((result) => result == null)) {
+      throw new StateError("Tried calling _currentResult when some results "
+          "are null.");
+    }
     final positives = _currentResults.fold(
         0, (int sum, bool result) => sum += result ? 1 : 0);
     final negatives = slotLines - positives;
-    if (allowCriticalSuccess && positives == slotLines)
-      return _criticalSuccessMsg;
-    if (allowCriticalFailure && negatives == slotLines)
-      return _criticalFailureMsg;
-    if (positives > negatives) return _successMsg;
-    if (positives < negatives) return _failureMsg;
-    // Slots are always odd.
-    throw new StateError("Cannot decide success or fail.");
+
+    if (allowCriticalSuccess && positives == slotLines) {
+      return Result.criticalSuccess;
+    }
+    if (allowCriticalFailure && negatives == slotLines) {
+      return Result.criticalFailure;
+    }
+    if (positives > negatives) return Result.success;
+    if (positives < negatives) return Result.failure;
+
+    throw new StateError("Cannot decide success or fail. "
+        "slotCount should be odd.");
+  }
+
+  String get _currentResultText {
+    switch (_currentResult) {
+      case Result.criticalSuccess:
+        return _criticalSuccessMsg;
+      case Result.success:
+        return _successMsg;
+      case Result.failure:
+        return _failureMsg;
+      case Result.criticalFailure:
+        return _criticalFailureMsg;
+      default:
+        throw new StateError("No result");
+    }
   }
 
   /// Start rolling the slot machine. Returns with the text of the result.
-  Future<String> roll() {
+  Future<Result> roll() {
     if (_rollCompleter != null) {
       throw new StateError("Cannot roll one slot machine twice.");
     }
-    _rollCompleter = new Completer<String>();
+    _rollCompleter = new Completer<Result>();
 
     Future
         .wait([_successIcon.onLoad.first, _failureIcon.onLoad.first]).then((_) {
@@ -239,18 +261,18 @@ class SlotMachineAnimation {
 
     if (_lines.every((line) => line.isFinished)) {
       resultEl.text = _currentResultText;
-      _rollCompleter.complete(_currentResultText);
+      _rollCompleter.complete(_currentResult);
       return;
     }
 
     for (int i = 0; i < slotLines; i++) {
       final line = _lines[i];
-      _currentResults[i] = line.currentResult;
       if (_timeOfStartOfRoll != null &&
           _lastTime - _timeOfStartOfRoll > line.fullSpeedMilliseconds) {
         line.isSlowingDown = true;
       }
       line.update(dt);
+      _currentResults[i] = line.currentResult;
     }
 
     // Draw the gradient overlay.
