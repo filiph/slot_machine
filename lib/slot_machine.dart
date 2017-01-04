@@ -81,7 +81,7 @@ class SlotMachineAnimation {
   ///
   /// Indicate what kinds of results to allow with [allowCriticalSuccess]
   /// and [allowCriticalFailure].
-  SlotMachineAnimation(List<num> linesProbabilities,
+  SlotMachineAnimation._(List<num> linesProbabilities,
       {this.allowCriticalSuccess: false, this.allowCriticalFailure: false}) {
     assert(linesProbabilities.length == slotLines);
     _height = width;
@@ -114,7 +114,7 @@ class SlotMachineAnimation {
   /// Create a slot machine animation with probability of success (of the whole
   /// machine) being [probability].
   factory SlotMachineAnimation.fromProbability(num probability) {
-    return new SlotMachineAnimation(getPrecomputedSetup(probability));
+    return new SlotMachineAnimation._(getPrecomputedSetup(probability));
   }
 
   String get _currentResultText {
