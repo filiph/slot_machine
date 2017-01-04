@@ -16,48 +16,75 @@ import 'package:slot_machine/precomputed_setups.dart' show getPrecomputedSetup;
 /// The SlotMachineAnimation is single-serving, i.e. it cannot be rolled more
 /// than once.
 class SlotMachineAnimation {
-  static const int FADE_IN_MILLISECONDS = 500;
+  static const int _fadeInMilliseconds = 500;
 
-  static const num MAXIMUM_DT = 1000 / 30;
+  static const num _maximumDt = 1000 / 30;
 
-  static const String CRITICAL_SUCCESS = "critical success";
-  static const String SUCCESS = "success";
-  static const String FAILURE = "failure";
+  static const String _criticalSuccessMsg = "critical success";
 
-  static const String CRITICAL_FAILURE = "critical failure";
+  static const String _successMsg = "success";
+
+  static const String _failureMsg = "failure";
+
+  static const String _criticalFailureMsg = "critical failure";
+
+  /// The number of lines (symbols) per each slot.
   final int slotLines = 5;
 
+  /// The width of each slot in pixels.
   final int width = 40;
-  int height;
 
+  /// The height of each slot line (symbol).
+  int _height;
+
+  /// Whether or not to allow this slot machine to return critical successes.
   final bool allowCriticalSuccess;
+
+  /// Whether or not to allow this slot machine to return critical failures.
   final bool allowCriticalFailure;
 
+  /// The canvas element that this library creates and that should be added
+  /// to the DOM by the library's user.
   CanvasElement canvasEl;
+
   CanvasRenderingContext2D _ctx;
 
   CanvasGradient _gradient;
 
-  final ImageElement _successSource = new ImageElement(
+  final ImageElement _successIcon = new ImageElement(
       src: "packages/slot_machine/img/slot-success.gif", width: 40, height: 40);
 
-  final ImageElement _failureSource = new ImageElement(
+  final ImageElement _failureIcon = new ImageElement(
       src: "packages/slot_machine/img/slot-failure.gif", width: 40, height: 40);
 
+  /// The result element that this library updates with current result (i.e.
+  /// what the slot machine would output if it was immediately halted, frozen
+  /// in current state).
+  ///
+  /// The library's users should add this element to the DOM if the want to
+  /// show it.
   SpanElement resultEl;
 
   List<_SlotMachineLine> _lines;
+
   Completer<String> _rollCompleter;
-  num last_t = 0;
+
+  num _lastTime = 0;
 
   num _timeOfStartOfRoll;
 
-  List<bool> currentResults;
+  /// A list of booleans evaluating the slots from left to right.
+  List<bool> _currentResults;
 
+  /// Create a [SlotMachineAnimation] by giving probability of success per
+  /// each slot with [linesProbabilities].
+  ///
+  /// Indicate what kinds of results to allow with [allowCriticalSuccess]
+  /// and [allowCriticalFailure].
   SlotMachineAnimation(List<num> linesProbabilities,
-      {this.allowCriticalSuccess, this.allowCriticalFailure}) {
+      {this.allowCriticalSuccess: false, this.allowCriticalFailure: false}) {
     assert(linesProbabilities.length == slotLines);
-    height = width;
+    _height = width;
 
     canvasEl = new CanvasElement(width: width * slotLines, height: width * 3);
     _ctx = canvasEl.context2D;
@@ -66,9 +93,9 @@ class SlotMachineAnimation {
     _lines = new List<_SlotMachineLine>(slotLines);
     for (int i = 0; i < slotLines; i += 1) {
       _lines[i] = new _SlotMachineLine(linesProbabilities[i], _ctx, i * width,
-          width, height, _successSource, _failureSource);
+          width, _height, _successIcon, _failureIcon);
     }
-    currentResults = new List<bool>(slotLines);
+    _currentResults = new List<bool>(slotLines);
 
     if (slotLines % 2 == 0) {
       throw new ArgumentError("Slots need to be an odd number.");
@@ -83,22 +110,29 @@ class SlotMachineAnimation {
     _gradient.addColorStop(0.9, 'rgba(255,255,255,1)');
     _gradient.addColorStop(1, 'rgba(255,255,255,1)');
   }
+
+  /// Create a slot machine animation with probability of success (of the whole
+  /// machine) being [probability].
   factory SlotMachineAnimation.fromProbability(num probability) {
     return new SlotMachineAnimation(getPrecomputedSetup(probability));
   }
-  String get currentResultText {
-    if (currentResults.any((result) => result == null)) return "";
-    int positives =
-        currentResults.fold(0, (int sum, bool result) => sum += result ? 1 : 0);
-    int negatives = slotLines - positives;
-    if (allowCriticalSuccess && positives == slotLines) return CRITICAL_SUCCESS;
-    if (allowCriticalFailure && negatives == slotLines) return CRITICAL_FAILURE;
-    if (positives > negatives) return SUCCESS;
-    if (positives < negatives) return FAILURE;
+
+  String get _currentResultText {
+    if (_currentResults.any((result) => result == null)) return "";
+    final positives = _currentResults.fold(
+        0, (int sum, bool result) => sum += result ? 1 : 0);
+    final negatives = slotLines - positives;
+    if (allowCriticalSuccess && positives == slotLines)
+      return _criticalSuccessMsg;
+    if (allowCriticalFailure && negatives == slotLines)
+      return _criticalFailureMsg;
+    if (positives > negatives) return _successMsg;
+    if (positives < negatives) return _failureMsg;
     // Slots are always odd.
     throw new StateError("Cannot decide success or fail.");
   }
 
+  /// Start rolling the slot machine. Returns with the text of the result.
   Future<String> roll() {
     if (_rollCompleter != null) {
       throw new StateError("Cannot roll one slot machine twice.");
@@ -106,32 +140,33 @@ class SlotMachineAnimation {
     _rollCompleter = new Completer<String>();
 
     Future.wait(
-        [_successSource.onLoad.first, _failureSource.onLoad.first]).then((_) {
-      update(0);
+        [_successIcon.onLoad.first, _failureIcon.onLoad.first]).then((_) {
+      _update(0);
     });
 
     return _rollCompleter.future;
   }
 
-  void update(num timeFromStartOfPage) {
+  /// Called each frame to update the animation.
+  void _update(num timeFromStartOfPage) {
     if (_timeOfStartOfRoll == null && timeFromStartOfPage != 0) {
       _timeOfStartOfRoll = timeFromStartOfPage;
     }
-    num dt = timeFromStartOfPage - last_t;
-    if (dt > MAXIMUM_DT) dt = MAXIMUM_DT; // Disallow huge dt steps.
-    last_t = timeFromStartOfPage;
+    num dt = timeFromStartOfPage - _lastTime;
+    if (dt > _maximumDt) dt = _maximumDt; // Disallow huge dt steps.
+    _lastTime = timeFromStartOfPage;
 
     if (_lines.every((line) => line.isFinished)) {
-      resultEl.text = currentResultText;
-      _rollCompleter.complete(currentResultText);
+      resultEl.text = _currentResultText;
+      _rollCompleter.complete(_currentResultText);
       return;
     }
 
     for (int i = 0; i < slotLines; i++) {
-      _SlotMachineLine line = _lines[i];
-      currentResults[i] = line.currentResult;
+      final line = _lines[i];
+      _currentResults[i] = line.currentResult;
       if (_timeOfStartOfRoll != null &&
-          last_t - _timeOfStartOfRoll > line.fullSpeedMilliseconds) {
+          _lastTime - _timeOfStartOfRoll > line.fullSpeedMilliseconds) {
         line.isSlowingDown = true;
       }
       line.update(dt);
@@ -139,43 +174,55 @@ class SlotMachineAnimation {
 
     // Draw the gradient overlay.
     _ctx.fillStyle = _gradient;
-    _ctx.fillRect(0, 0, width * slotLines, height * 3);
+    _ctx.fillRect(0, 0, width * slotLines, _height * 3);
 
     // Fade in.
     if (_timeOfStartOfRoll != null &&
-        last_t - _timeOfStartOfRoll < FADE_IN_MILLISECONDS) {
+        _lastTime - _timeOfStartOfRoll < _fadeInMilliseconds) {
       _ctx.fillStyle = "rgba(255, 255, 255, "
-          "${1 - (last_t - _timeOfStartOfRoll) / FADE_IN_MILLISECONDS})";
-      _ctx.fillRect(0, 0, width * slotLines, height * 3);
+          "${1 - (_lastTime - _timeOfStartOfRoll) / _fadeInMilliseconds})";
+      _ctx.fillRect(0, 0, width * slotLines, _height * 3);
     }
 
-    resultEl.text = currentResultText;
+    resultEl.text = _currentResultText;
 
-    window.animationFrame.then(update);
+    window.animationFrame.then(_update);
   }
 }
 
 class _SlotMachineLine {
-  static const int SLOT_COUNT = 10;
-  static const int MIN_FULL_SPEED_MILLISECONDS = 500;
+  static const int slotCount = 10;
+
+  static const int minFullSpeedMilliseconds = 500;
+
   static final Random _random = new Random();
 
   final num probability;
+
   final int leftOffset;
+
   final int width;
+
   final int height;
+
   num fullSpeedMilliseconds;
+
   final CanvasRenderingContext2D _ctx;
 
   num topOffset = 0;
 
   num speed = 0.01;
+
   num drag = 0.0001;
+
   bool isSlowingDown = false;
+
   bool isFinished = false;
+
   final CanvasImageSource successSource;
 
   final CanvasImageSource failureSource;
+
   num _pos = 0;
 
   bool currentResult;
@@ -184,19 +231,19 @@ class _SlotMachineLine {
 
   _SlotMachineLine(this.probability, this._ctx, this.leftOffset, this.width,
       this.height, this.successSource, this.failureSource) {
-    _values = new List<bool>.filled(SLOT_COUNT, false);
+    _values = new List<bool>.filled(slotCount, false);
 
-    int successValuesTarget = (SLOT_COUNT * probability).round();
+    final successValuesTarget = (slotCount * probability).round();
     int successValuesCurrent = 0;
     while (successValuesCurrent < successValuesTarget) {
-      int index = _random.nextInt(SLOT_COUNT);
+      final index = _random.nextInt(slotCount);
       if (_values[index] == false) {
         _values[index] = true;
         successValuesCurrent += 1;
       }
     }
 
-    fullSpeedMilliseconds = MIN_FULL_SPEED_MILLISECONDS + _random.nextInt(2000);
+    fullSpeedMilliseconds = minFullSpeedMilliseconds + _random.nextInt(2000);
     speed += speed * (_random.nextDouble() / 10);
 
     // Fail otherwise, because our assets are 40x40.
@@ -210,10 +257,6 @@ class _SlotMachineLine {
   }
 
   void drawSquare(num topOffset, bool value) {
-//    _ctx.fillStyle = value ? 'green' : 'red';
-    //    ctx.setFillColorRgb(255, 0, 0);
-//    _ctx.fillRect(leftOffset, topOffset, width, height);
-
     _ctx.drawImage(
         value ? successSource : failureSource, leftOffset, topOffset);
   }
@@ -235,14 +278,15 @@ class _SlotMachineLine {
     if (!isFinished) {
       _pos += (dt * speed * height);
     }
-    num normalizedPos = _pos % (height * SLOT_COUNT);
 
-    int topIndex = (normalizedPos / height).floor();
-    currentResult = _values[(topIndex - 2) % SLOT_COUNT];
+    final normalizedPos = _pos % (height * slotCount);
+
+    final topIndex = (normalizedPos / height).floor();
+    currentResult = _values[(topIndex - 2) % slotCount];
     for (int i = 0; i < 3 + 1; i++) {
-      int index = topIndex - i;
+      final index = topIndex - i;
       drawSquare((normalizedPos % height) - height + (height * i),
-          _values[index % SLOT_COUNT]);
+          _values[index % slotCount]);
     }
   }
 }

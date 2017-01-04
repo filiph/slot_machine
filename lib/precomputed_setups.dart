@@ -1,6 +1,10 @@
 library slot_machine_precomputed_setups;
 
-const int PRECISION_STEPS = 5;
+/// The percentage steps of [precomputedSetups].
+///
+/// For example, if this is `5`, then we'll have precomputed setups for 0%, 5%,
+/// 10%, 15%, and so on.
+const int precisionSteps = 5;
 
 /// A map that was populated by running [:bin/compute_setup.dart:]. The setups
 /// will produce slot machines that will produce successes with the appropriate
@@ -8,7 +12,7 @@ const int PRECISION_STEPS = 5;
 ///
 /// These setups hold true when number of slot lines is 5 and number of slots
 /// (images) per each line is 10.
-const Map<num, List<num>> PRECOMPUTED_SETUPS = const {
+const Map<num, List<num>> precomputedSetups = const {
   0: const [0.0, 0.0, 0.0, 0.0, 0.0],
   5: const [0.2, 0.1, 0.4, 0.2, 0.1],
   10: const [0.4, 0.0, 0.4, 0.2, 0.3],
@@ -58,9 +62,9 @@ num findClosest(num target, Iterable<num> list) {
 /// Takes a probability of success that we want to see from the slot machine
 /// as a whole and returns precomputed setup that will create such slot machine.
 List<num> getPrecomputedSetup(num desiredProbability) {
-  num probability = desiredProbability * 100 / PRECISION_STEPS; // ex. 6.4
+  num probability = desiredProbability * 100 / precisionSteps; // ex. 6.4
   probability = probability.round(); // ex. 6.0
-  probability *= PRECISION_STEPS; // ex. 60
+  probability *= precisionSteps; // ex. 60
 
-  return PRECOMPUTED_SETUPS[probability];
+  return precomputedSetups[probability];
 }
