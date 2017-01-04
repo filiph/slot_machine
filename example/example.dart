@@ -20,8 +20,6 @@ void main() {
     resultEl.children.clear();
 
     var slotMachine = new SlotMachineAnimation.fromProbability(probability);
-    // slotMachine.allowCriticalSuccess = false;
-    // slotMachine.allowCriticalFailure = false;
     container.append(slotMachine.canvasEl);
     resultEl.append(slotMachine.resultEl);
     slotMachine.roll()
