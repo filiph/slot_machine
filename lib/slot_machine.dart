@@ -85,13 +85,13 @@ class SlotMachineAnimation {
   }
 
   /// Create a [SlotMachineAnimation] by giving probability of success per
-  /// each slot with [linesProbabilities].
+  /// each slot with [linesSuccessSymbols].
   ///
   /// Indicate what kinds of results to allow with [allowCriticalSuccess]
   /// and [allowCriticalFailure].
-  SlotMachineAnimation._(List<num> linesProbabilities,
+  SlotMachineAnimation._(List<int> linesSuccessSymbols,
       {this.allowCriticalSuccess: false, this.allowCriticalFailure: false}) {
-    assert(linesProbabilities.length == slotLines);
+    assert(linesSuccessSymbols.length == slotLines);
     _height = width;
 
     canvasEl = new CanvasElement(width: width * slotLines, height: width * 3);
@@ -100,7 +100,7 @@ class SlotMachineAnimation {
 
     _lines = new List<_SlotMachineLine>(slotLines);
     for (int i = 0; i < slotLines; i += 1) {
-      _lines[i] = new _SlotMachineLine(linesProbabilities[i], _ctx, i * width,
+      _lines[i] = new _SlotMachineLine(linesSuccessSymbols[i], _ctx, i * width,
           width, _height, _successIcon, _failureIcon);
     }
     _currentResults = new List<bool>(slotLines);

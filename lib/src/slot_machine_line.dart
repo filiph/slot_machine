@@ -7,7 +7,7 @@ class _SlotMachineLine {
 
   static final Random _random = new Random();
 
-  final num probability;
+  final int _successSymbolsCount;
 
   final int leftOffset;
 
@@ -39,13 +39,12 @@ class _SlotMachineLine {
 
   List<bool> _values;
 
-  _SlotMachineLine(this.probability, this._ctx, this.leftOffset, this.width,
+  _SlotMachineLine(this._successSymbolsCount, this._ctx, this.leftOffset, this.width,
       this.height, this.successSource, this.failureSource) {
     _values = new List<bool>.filled(slotCount, false);
 
-    final successValuesTarget = (slotCount * probability).round();
     int successValuesCurrent = 0;
-    while (successValuesCurrent < successValuesTarget) {
+    while (successValuesCurrent < _successSymbolsCount) {
       final index = _random.nextInt(slotCount);
       if (_values[index] == false) {
         _values[index] = true;
