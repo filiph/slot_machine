@@ -19,7 +19,7 @@ h1, p {
   width: 200px;
 }
 
-#start_button {
+#random_button, #success_button, #fail_button {
   width: 200px;
   text-align: center;
   -webkit-user-select: none;

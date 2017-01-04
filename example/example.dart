@@ -7,22 +7,30 @@ void main() {
   final resultEl = querySelector("#slot_result");
   final RangeInputElement probabilityEl = querySelector("#probability");
   final probabilitySpan = querySelector("#probability_span");
-  final startButton = querySelector("#start_button");
+  final randomButton = querySelector("#random_button");
+  final successButton = querySelector("#success_button");
+  final failButton = querySelector("#fail_button");
 
+  // Allow setting up probability.
   num probability = 0.75;
   probabilityEl.onChange.listen((_) {
     probability = probabilityEl.valueAsNumber / 100;
     probabilitySpan.text = "${probabilityEl.value}%";
   });
 
-  startButton.onClick.listen((_) {
+  // Handle click of buttons.
+  void handle(Result predeterminedResult) {
     container.children.clear();
     resultEl.children.clear();
 
     final slotMachine = new SlotMachineAnimation.fromProbability(probability,
-        predeterminedResult: Result.failure);
+        predeterminedResult: predeterminedResult);
     container.append(slotMachine.canvasEl);
     resultEl.append(slotMachine.resultEl);
     slotMachine.roll().then(print);
-  });
+  }
+
+  randomButton.onClick.listen((_) => handle(null));
+  successButton.onClick.listen((_) => handle(Result.success));
+  failButton.onClick.listen((_) => handle(Result.failure));
 }
