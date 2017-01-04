@@ -47,7 +47,7 @@ const PRECISION_STEPS = 5;
 /// one is taken.
 num findClosest(num target, Iterable<num> list) {
   num min = double.INFINITY;
-  num closest = target;
+  num closest;
   
   for (num v in list) {
     final num diff = (v - target).abs();
@@ -56,6 +56,10 @@ num findClosest(num target, Iterable<num> list) {
       min = diff;
       closest = v;
     }
+  }
+
+  if (closest == null) {
+    throw new ArgumentError("provided list was empty");
   }
   
   return closest;
