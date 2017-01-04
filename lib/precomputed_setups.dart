@@ -1,6 +1,6 @@
 library slot_machine_precomputed_setups;
 
-const PRECISION_STEPS = 5;
+const int PRECISION_STEPS = 5;
 
 /// A map that was populated by running [:bin/compute_setup.dart:]. The setups
 /// will produce slot machines that will produce successes with the appropriate

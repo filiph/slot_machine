@@ -39,7 +39,6 @@ void computeSlotMachineProbability(List<List<bool>> setup) {
   List<int> outcomes = _generatePossibleOutcomes(setup);
 
   int slotLinesCount = setup.length;
-  int slotCount = setup[0].length;
 
   int count = outcomes.length;
   int criticalSuccesses = outcomes.where((o) => o == slotLinesCount).length;
@@ -91,7 +90,6 @@ List<List<bool>> findSlotLineSetup(num desiredProbability,
   // Create initial setup.
   List<List<bool>> setup = new List(slotLinesCount);
   for (int i = 0; i < slotLinesCount; i++) {
-    bool value;
     if (fillValue == null) {
       // We are starting from probability 0.5, so let's create half true,
       // half false.
@@ -123,14 +121,11 @@ List<List<bool>> findSlotLineSetup(num desiredProbability,
     int randomSlot;
     bool currentValue;
     // Pick a single slot to flip.
-    while (true) {
+    do {
       randomLine = random.nextInt(slotLinesCount);
       randomSlot = random.nextInt(slotCount);
       currentValue = setup[randomLine][randomSlot];
-      if (currentValue != boolValueToFlip) {
-        break;
-      }
-    }
+    } while(currentValue == boolValueToFlip);
 
     // Flip the random bit.
     setup[randomLine][randomSlot] = !setup[randomLine][randomSlot];
@@ -166,7 +161,6 @@ List<int> _generatePossibleOutcomes(List<List<bool>> setup,
     {int leftOffset: 0}) {
   // Compute first slot line's successes.
   int slotLinesCount = setup.length;
-  int slotCount = setup[0].length;
   List<int> thisLineOutcomes =
       new List<int>.from(setup[leftOffset].map((b) => b ? 1 : -1));
 
