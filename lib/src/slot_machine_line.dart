@@ -7,6 +7,21 @@ class _SlotMachineLine {
 
   static final Random _random = new Random();
 
+  static const int _minInitialSpeed = 10000;
+
+  static const int _resolution = 1000000;
+
+  /// Speed at which drag stops and the slot just linearly goes to the next
+  /// central position.
+  static const num minSpeed = 1000;
+
+  /// The amount of 'safe' space where we don't want to land when we
+  /// predetermine result.
+  ///
+  /// If this was `0`, any variance in rounding could mean that we end up
+  /// under- or over-shooting our desired position.
+  static const double _randomOffsetMargin = 0.3;
+
   final int _successSymbolsCount;
 
   final int leftOffset;
@@ -27,10 +42,6 @@ class _SlotMachineLine {
 
   int drag = 5;
 
-  static const int _minInitialSpeed = 10000;
-
-  static const int _resolution = 1000000;
-
   bool isSlowingDown = false;
 
   bool isFinished = false;
@@ -45,8 +56,9 @@ class _SlotMachineLine {
 
   List<bool> _values;
 
-  _SlotMachineLine(this._successSymbolsCount, this._ctx, this.leftOffset, this.width,
-      this.height, this.successSource, this.failureSource, {this.predeterminedResult}) {
+  _SlotMachineLine(this._successSymbolsCount, this._ctx, this.leftOffset,
+      this.width, this.height, this.successSource, this.failureSource,
+      {this.predeterminedResult}) {
     _values = new List<bool>.filled(slotCount, false);
 
     int successValuesCurrent = 0;
@@ -82,10 +94,12 @@ class _SlotMachineLine {
 
   int setupForPredeterminedResult() {
     assert(predeterminedResult != null);
-    assert(predeterminedResult != Result.criticalSuccess); // Don't use for slot line
+    // Don't use critical success/failure for a single slot line.
+    assert(predeterminedResult != Result.criticalSuccess);
     assert(predeterminedResult != Result.criticalFailure);
 
-    final predeterminedValue = predeterminedResult == Result.success ? true : false;
+    final predeterminedValue =
+        predeterminedResult == Result.success ? true : false;
 
     if (_values.every((value) => value != predeterminedValue)) {
       throw new ArgumentError("Cannot end up with $predeterminedResult when "
@@ -115,17 +129,6 @@ class _SlotMachineLine {
 
     return pos;
   }
-
-  /// Speed at which drag stops and the slot just linearly goes to the next
-  /// central position.
-  static const num minSpeed = 1000;
-
-  /// The amount of 'safe' space where we don't want to land when we
-  /// predetermine result.
-  ///
-  /// If this was `0`, any variance in rounding could mean that we end up
-  /// under- or over-shooting our desired position.
-  static const double _randomOffsetMargin = 0.3;
 
   void update(num dt) {
     if (isSlowingDown && !isFinished) {

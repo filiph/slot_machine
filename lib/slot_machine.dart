@@ -8,6 +8,18 @@ import 'package:slot_machine/precomputed_setups.dart' show getPrecomputedSetup;
 
 part 'src/slot_machine_line.dart';
 
+/// The result of a roll.
+enum Result {
+  /// Normal success.
+  success,
+  /// Normal failure.
+  failure,
+  /// Major success.
+  criticalSuccess,
+  /// Major failure.
+  criticalFailure
+}
+
 /// A class that creates the slot machine.
 ///
 /// It currently only creates slot machines with 5 slot lines, 10 images each.
@@ -193,16 +205,4 @@ class SlotMachineAnimation {
 
     window.animationFrame.then(_update);
   }
-}
-
-/// The result of a roll.
-enum Result {
-  /// Normal success.
-  success,
-  /// Normal failure.
-  failure,
-  /// Major success.
-  criticalSuccess,
-  /// Major failure.
-  criticalFailure
 }
