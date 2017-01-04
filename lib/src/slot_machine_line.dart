@@ -17,15 +17,17 @@ class _SlotMachineLine {
 
   final Result predeterminedResult;
 
-  num fullSpeedMilliseconds;
+  int fullSpeedMilliseconds;
 
   final CanvasRenderingContext2D _ctx;
 
-  num topOffset = 0;
+  int topOffset = 0;
 
-  num speed = 0.01;
+  int speed;
 
-  num drag = 0.000005;
+  int drag = 5;
+
+  static const int _minInitialSpeed = 10000;
 
   static const int _resolution = 1000000;
 
@@ -37,7 +39,7 @@ class _SlotMachineLine {
 
   final CanvasImageSource failureSource;
 
-  num _pos = 0;
+  int _pos = 0;
 
   bool currentResult;
 
@@ -57,7 +59,7 @@ class _SlotMachineLine {
     }
 
     fullSpeedMilliseconds = minFullSpeedMilliseconds + _random.nextInt(2000);
-    speed += speed * (_random.nextDouble() / 10);
+    speed = _minInitialSpeed + (_random.nextInt(_minInitialSpeed) / 10).round();
 
     if (predeterminedResult != null) {
       _pos = setupForPredeterminedResult();
@@ -78,7 +80,7 @@ class _SlotMachineLine {
         value ? successSource : failureSource, leftOffset, topOffset);
   }
 
-  num setupForPredeterminedResult() {
+  int setupForPredeterminedResult() {
     assert(predeterminedResult != null);
     assert(predeterminedResult != Result.criticalSuccess); // Don't use for slot line
     assert(predeterminedResult != Result.criticalFailure);
@@ -96,13 +98,14 @@ class _SlotMachineLine {
     }
 
     /// Create target position.
-    num pos = index * height + 1.5 * height;
+    int pos = ((index * height + 1.5 * height) * _resolution).round();
+    // TODO: vary the exact location (right now we get to exact center)
 
-    num speed = minSpeed;
+    int speed = minSpeed;
     while (speed < this.speed) {
       // Do this until speed reaches the initial [_SlotMachineLine.speed].
-      final dt = SlotMachineAnimation._maximumDt / 2;
-      pos -= dt * speed * height;
+      final dt = SlotMachineAnimation._maximumDt;
+      pos -= (dt * speed * height).round();
       speed += drag * dt;
       // TODO: make a single computation out of this loop - integral
     }
@@ -110,31 +113,29 @@ class _SlotMachineLine {
     pos -= fullSpeedMilliseconds * this.speed * height;
 
     return pos;
-//    - TODO: make speed & pos an int so that there is zero rounding error
-//    - TODO: test (and fix) for very long pauses in execution
   }
 
-  static const num minSpeed = 0.001;
+  static const num minSpeed = 1000;
 
   void update(num dt) {
     if (isSlowingDown && !isFinished) {
       if (speed <= minSpeed) {
-        if ((_pos % height).abs() < height / 20) {
+        if (((_pos / _resolution) % height).abs() < height / 20) {
           speed = 0;
           isFinished = true;
         }
       } else {
-        speed -= drag * dt;
+        speed -= (drag * dt).round();
       }
     }
 
     clear();
 
     if (!isFinished) {
-      _pos += (dt * speed * height);
+      _pos += (dt * speed * height).round();
     }
 
-    final normalizedPos = _pos % (height * slotCount);
+    final normalizedPos = (_pos / _resolution) % (height * slotCount);
 
     final topIndex = (normalizedPos / height).floor();
     currentResult = _values[(topIndex - 2) % slotCount];
