@@ -102,6 +102,8 @@ class SlotMachineAnimation {
   /// machine) being [probability].
   factory SlotMachineAnimation.fromProbability(num probability,
       {Result predeterminedResult}) {
+    assert(probability > 0 || predeterminedResult != Result.success);
+    assert(probability < 1 || predeterminedResult != Result.failure);
     final setup = getPrecomputedSetup(probability);
     return new SlotMachineAnimation._(setup,
         predeterminedResult: predeterminedResult);
