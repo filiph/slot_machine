@@ -191,3 +191,15 @@ class SlotMachineAnimation {
     window.animationFrame.then(_update);
   }
 }
+
+/// The result of a roll.
+enum Result {
+  /// Normal success.
+  success,
+  /// Normal failure.
+  failure,
+  /// Major success.
+  criticalSuccess,
+  /// Major failure.
+  criticalFailure
+}
