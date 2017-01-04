@@ -30,7 +30,10 @@ class _SlotMachineLine {
 
   final int height;
 
-  final Result predeterminedResult;
+  /// The result that this slot line should end up with.
+  ///
+  /// Can be `null`. `true` means success, `false` means failure.
+  final bool predeterminedResult;
 
   int fullSpeedMilliseconds;
 
@@ -94,20 +97,14 @@ class _SlotMachineLine {
 
   int setupForPredeterminedResult() {
     assert(predeterminedResult != null);
-    // Don't use critical success/failure for a single slot line.
-    assert(predeterminedResult != Result.criticalSuccess);
-    assert(predeterminedResult != Result.criticalFailure);
 
-    final predeterminedValue =
-        predeterminedResult == Result.success ? true : false;
-
-    if (_values.every((value) => value != predeterminedValue)) {
+    if (_values.every((value) => value != predeterminedResult)) {
       throw new ArgumentError("Cannot end up with $predeterminedResult when "
           "values of slot are $_values (all success or all failure).");
     }
 
     int index = _random.nextInt(slotCount);
-    while (_values[index] != predeterminedValue) {
+    while (_values[index] != predeterminedResult) {
       index = (index + 1) % slotCount;
     }
 

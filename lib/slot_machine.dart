@@ -12,10 +12,13 @@ part 'src/slot_machine_line.dart';
 enum Result {
   /// Normal success.
   success,
+
   /// Normal failure.
   failure,
+
   /// Major success.
   criticalSuccess,
+
   /// Major failure.
   criticalFailure
 }
@@ -44,6 +47,8 @@ class SlotMachineAnimation {
   static const String _failureMsg = "failure";
 
   static const String _criticalFailureMsg = "critical failure";
+
+  static final Random _random = new Random();
 
   /// The number of lines (symbols) per each slot.
   final int slotLines = 5;
@@ -95,8 +100,11 @@ class SlotMachineAnimation {
 
   /// Create a slot machine animation with probability of success (of the whole
   /// machine) being [probability].
-  factory SlotMachineAnimation.fromProbability(num probability) {
-    return new SlotMachineAnimation._(getPrecomputedSetup(probability));
+  factory SlotMachineAnimation.fromProbability(num probability,
+      {Result predeterminedResult}) {
+    final setup = getPrecomputedSetup(probability);
+    return new SlotMachineAnimation._(setup,
+        predeterminedResult: predeterminedResult);
   }
 
   /// Create a [SlotMachineAnimation] by giving probability of success per
@@ -105,7 +113,9 @@ class SlotMachineAnimation {
   /// Indicate what kinds of results to allow with [allowCriticalSuccess]
   /// and [allowCriticalFailure].
   SlotMachineAnimation._(List<int> linesSuccessSymbols,
-      {this.allowCriticalSuccess: false, this.allowCriticalFailure: false}) {
+      {this.allowCriticalSuccess: false,
+      this.allowCriticalFailure: false,
+      Result predeterminedResult}) {
     assert(linesSuccessSymbols.length == slotLines);
     _height = width;
 
@@ -113,10 +123,13 @@ class SlotMachineAnimation {
     _ctx = canvasEl.context2D;
     resultEl = new SpanElement();
 
+    final predeterminedValues = _fillPredeterminedValues(predeterminedResult);
+
     _lines = new List<_SlotMachineLine>(slotLines);
     for (int i = 0; i < slotLines; i += 1) {
       _lines[i] = new _SlotMachineLine(linesSuccessSymbols[i], _ctx, i * width,
-          width, _height, _successIcon, _failureIcon);
+          width, _height, _successIcon, _failureIcon,
+          predeterminedResult: predeterminedValues[i]);
     }
     _currentResults = new List<bool>(slotLines);
 
@@ -162,6 +175,54 @@ class SlotMachineAnimation {
     });
 
     return _rollCompleter.future;
+  }
+
+  List<bool> _fillPredeterminedValues(Result predeterminedResult) {
+    if (predeterminedResult == null) {
+      return new List<bool>.filled(slotLines, null, growable: false);
+    }
+
+    if (predeterminedResult == Result.criticalSuccess) {
+      if (!allowCriticalSuccess) throw new ArgumentError(predeterminedResult);
+      return new List<bool>.filled(slotLines, true, growable: false);
+    }
+
+    if (predeterminedResult == Result.criticalFailure) {
+      if (!allowCriticalFailure) throw new ArgumentError(predeterminedResult);
+      return new List<bool>.filled(slotLines, false, growable: false);
+    }
+
+    final valuesMin = (slotLines / 2).ceil();
+    var valuesMax = slotLines;
+
+    // If we allow criticals, make sure we don't accidentally roll one.
+    if (allowCriticalSuccess && predeterminedResult == Result.success) {
+      valuesMax -= 1;
+    }
+
+    if (allowCriticalFailure && predeterminedResult == Result.failure) {
+      valuesMax -= 1;
+    }
+
+    final valuesTarget = valuesMin + _random.nextInt(valuesMax - valuesMin + 1);
+
+    final value = predeterminedResult == Result.success ? true : false;
+    final oppositeValue = !value;
+
+    final values =
+        new List<bool>.filled(slotLines, oppositeValue, growable: false);
+
+    var filled = 0;
+
+    while (filled < valuesTarget) {
+      final index = _random.nextInt(slotLines);
+      if (values[index] == oppositeValue) {
+        values[index] = value;
+        filled += 1;
+      }
+    }
+
+    return values;
   }
 
   /// Called each frame to update the animation.
