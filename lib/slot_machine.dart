@@ -117,6 +117,7 @@ class SlotMachineAnimation {
       this.allowCriticalFailure: false,
       Result predeterminedResult}) {
     assert(linesSuccessSymbols.length == slotLines);
+
     _height = width;
 
     canvasEl = new CanvasElement(width: width * slotLines, height: width * 3);
@@ -128,7 +129,7 @@ class SlotMachineAnimation {
     _lines = new List<_SlotMachineLine>(slotLines);
     for (int i = 0; i < slotLines; i += 1) {
       _lines[i] = new _SlotMachineLine(linesSuccessSymbols[i], _ctx, i * width,
-          width, _height, _successIcon, _failureIcon,
+          width, _height, _successIcon, _failureIcon, _random,
           predeterminedResult: predeterminedValues[i]);
     }
     _currentResults = new List<bool>(slotLines);

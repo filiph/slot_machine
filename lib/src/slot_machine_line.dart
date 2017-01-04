@@ -5,7 +5,8 @@ class _SlotMachineLine {
 
   static const int minFullSpeedMilliseconds = 500;
 
-  static final Random _random = new Random();
+  /// The injected random instance.
+  final Random _random;
 
   static const int _minInitialSpeed = 10000;
 
@@ -59,8 +60,15 @@ class _SlotMachineLine {
 
   List<bool> _values;
 
-  _SlotMachineLine(this._successSymbolsCount, this._ctx, this.leftOffset,
-      this.width, this.height, this.successSource, this.failureSource,
+  _SlotMachineLine(
+      this._successSymbolsCount,
+      this._ctx,
+      this.leftOffset,
+      this.width,
+      this.height,
+      this.successSource,
+      this.failureSource,
+      this._random,
       {this.predeterminedResult}) {
     _values = new List<bool>.filled(slotCount, false);
 
