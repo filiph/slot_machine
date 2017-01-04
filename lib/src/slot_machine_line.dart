@@ -98,13 +98,14 @@ class _SlotMachineLine {
     }
 
     /// Create target position.
-    int pos = ((index * height + 1.5 * height) * _resolution).round();
-    // TODO: vary the exact location (right now we get to exact center)
+    final margin = (_randomOffsetMargin * height).round();
+    final randomOffset = margin + _random.nextInt(height - 2 * margin);
+    int pos = (((index + 1) * height + randomOffset) * _resolution).round();
 
     int speed = minSpeed;
     while (speed < this.speed) {
       // Do this until speed reaches the initial [_SlotMachineLine.speed].
-      final dt = SlotMachineAnimation._maximumDt;
+      final dt = SlotMachineAnimation._maximumDt ~/ 5;
       pos -= (dt * speed * height).round();
       speed += drag * dt;
       // TODO: make a single computation out of this loop - integral
@@ -115,7 +116,16 @@ class _SlotMachineLine {
     return pos;
   }
 
+  /// Speed at which drag stops and the slot just linearly goes to the next
+  /// central position.
   static const num minSpeed = 1000;
+
+  /// The amount of 'safe' space where we don't want to land when we
+  /// predetermine result.
+  ///
+  /// If this was `0`, any variance in rounding could mean that we end up
+  /// under- or over-shooting our desired position.
+  static const double _randomOffsetMargin = 0.3;
 
   void update(num dt) {
     if (isSlowingDown && !isFinished) {

@@ -20,7 +20,10 @@ part 'src/slot_machine_line.dart';
 class SlotMachineAnimation {
   static const int _fadeInMilliseconds = 500;
 
-  static final int _maximumDt = (1000 / 30).floor();
+  /// The maximum dt that the update method allows.
+  ///
+  /// Defaults to 30 fps (1000 / 30 = 33ms).
+  static final int _maximumDt = 33;
 
   static const String _criticalSuccessMsg = "critical success";
 
