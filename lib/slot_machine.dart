@@ -5,23 +5,11 @@ import 'dart:html';
 import 'dart:math';
 
 import 'package:slot_machine/precomputed_setups.dart' show getPrecomputedSetup;
+import 'package:slot_machine/result.dart';
+
+export 'package:slot_machine/result.dart';
 
 part 'src/slot_machine_line.dart';
-
-/// The result of a roll.
-enum Result {
-  /// Normal success.
-  success,
-
-  /// Normal failure.
-  failure,
-
-  /// Major success.
-  criticalSuccess,
-
-  /// Major failure.
-  criticalFailure
-}
 
 /// A class that creates the slot machine.
 ///
