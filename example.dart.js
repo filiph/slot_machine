@@ -3294,8 +3294,8 @@ gbz:function(a){return new W.a5(a,"change",!1,[W.a0])},
 gbA:function(a){return new W.a5(a,"click",!1,[W.ea])},
 gaK:function(a){return new W.a5(a,"load",!1,[W.a0])},
 $isf:1,
-"%":"SVGComponentTransferFunctionElement|SVGDescElement|SVGDiscardElement|SVGFEDistantLightElement|SVGFEFuncAElement|SVGFEFuncBElement|SVGFEFuncGElement|SVGFEFuncRElement|SVGFEMergeNodeElement|SVGFEPointLightElement|SVGFESpotLightElement|SVGMetadataElement|SVGStopElement|SVGStyleElement|SVGTitleElement;SVGElement"},iq:{"^":"a1;k:height=",$isf:1,"%":"SVGSVGElement"},ir:{"^":"l;",$isf:1,"%":"SVGSymbolElement"},eB:{"^":"a1;","%":"SVGTSpanElement|SVGTextElement|SVGTextPositioningElement;SVGTextContentElement"},is:{"^":"eB;",$isf:1,"%":"SVGTextPathElement"},iu:{"^":"a1;k:height=",$isf:1,"%":"SVGUseElement"},iw:{"^":"l;",$isf:1,"%":"SVGViewElement"},iD:{"^":"l;",$isf:1,"%":"SVGGradientElement|SVGLinearGradientElement|SVGRadialGradientElement"},iF:{"^":"l;",$isf:1,"%":"SVGCursorElement"},iG:{"^":"l;",$isf:1,"%":"SVGFEDropShadowElement"},iH:{"^":"l;",$isf:1,"%":"SVGMPathElement"}}],["","",,P,{"^":""}],["","",,P,{"^":""}],["","",,P,{"^":""}],["","",,B,{"^":"",a3:{"^":"b;a",
-i:function(a){return C.Z.h(0,this.a)}},en:{"^":"b;a,b,c,d,e,f,r,x,y,z,Q,ch,cx,cy,db,dx",
+"%":"SVGComponentTransferFunctionElement|SVGDescElement|SVGDiscardElement|SVGFEDistantLightElement|SVGFEFuncAElement|SVGFEFuncBElement|SVGFEFuncGElement|SVGFEFuncRElement|SVGFEMergeNodeElement|SVGFEPointLightElement|SVGFESpotLightElement|SVGMetadataElement|SVGStopElement|SVGStyleElement|SVGTitleElement;SVGElement"},iq:{"^":"a1;k:height=",$isf:1,"%":"SVGSVGElement"},ir:{"^":"l;",$isf:1,"%":"SVGSymbolElement"},eB:{"^":"a1;","%":"SVGTSpanElement|SVGTextElement|SVGTextPositioningElement;SVGTextContentElement"},is:{"^":"eB;",$isf:1,"%":"SVGTextPathElement"},iu:{"^":"a1;k:height=",$isf:1,"%":"SVGUseElement"},iw:{"^":"l;",$isf:1,"%":"SVGViewElement"},iD:{"^":"l;",$isf:1,"%":"SVGGradientElement|SVGLinearGradientElement|SVGRadialGradientElement"},iF:{"^":"l;",$isf:1,"%":"SVGCursorElement"},iG:{"^":"l;",$isf:1,"%":"SVGFEDropShadowElement"},iH:{"^":"l;",$isf:1,"%":"SVGMPathElement"}}],["","",,P,{"^":""}],["","",,P,{"^":""}],["","",,P,{"^":""}],["","",,U,{"^":"",a3:{"^":"b;a",
+i:function(a){return C.Z.h(0,this.a)}}}],["","",,B,{"^":"",en:{"^":"b;a,b,c,d,e,f,r,x,y,z,Q,ch,cx,cy,db,dx",
 gb1:function(){var z,y,x
 z=this.dx
 if((z&&C.c).cD(z,new B.ep()))throw H.a(new P.N("Tried calling _currentResult when some results are null."))
@@ -3313,7 +3313,7 @@ case C.o:return"critical failure"
 default:throw H.a(new P.N("No result"))}},
 da:function(){var z,y
 if(this.cx!=null)throw H.a(new P.N("Cannot roll one slot machine twice."))
-z=B.a3
+z=U.a3
 this.cx=new P.eN(new P.C(0,$.j,null,[z]),[z])
 z=J.bM(this.y)
 z=z.gai(z)
@@ -3727,10 +3727,10 @@ C.O=I.o([8,6,9,9,8])
 C.P=I.o([8,10,10,10,7])
 C.Y=new H.c0([0,C.D,5,C.E,10,C.F,15,C.Q,20,C.R,25,C.S,30,C.T,35,C.U,40,C.V,45,C.W,50,C.X,55,C.G,60,C.H,65,C.I,70,C.J,75,C.K,80,C.L,85,C.M,90,C.N,95,C.O,100,C.P],[null,null])
 C.Z=new H.c0([0,"Result.success",1,"Result.failure",2,"Result.criticalSuccess",3,"Result.criticalFailure"],[null,null])
-C.e=new B.a3(0)
-C.h=new B.a3(1)
-C.n=new B.a3(2)
-C.o=new B.a3(3)
+C.e=new U.a3(0)
+C.h=new U.a3(1)
+C.n=new U.a3(2)
+C.o=new U.a3(3)
 $.cg="$cachedFunction"
 $.ch="$cachedInvocation"
 $.J=0
@@ -3769,7 +3769,7 @@ try{(void 0).$method$($argumentsExpr$)}catch(z){return z.message}}())},"ct","$ge
 I=I.$finishIsolateConstructor(I)
 $=new I()
 init.metadata=[null]
-init.types=[{func:1},{func:1,args:[,]},{func:1,v:true},{func:1,v:true,args:[{func:1,v:true}]},{func:1,v:true,args:[,],opt:[P.az]},{func:1,ret:P.a4,args:[P.k]},{func:1,args:[,P.a4]},{func:1,args:[P.a4]},{func:1,args:[{func:1,v:true}]},{func:1,v:true,args:[,,]},{func:1,args:[P.b]},{func:1,args:[,],opt:[,]},{func:1,v:true,args:[,P.az]},{func:1,args:[,,]},{func:1,v:true,args:[P.X]},{func:1,args:[P.k,P.ab]},{func:1,v:true,args:[B.a3]},{func:1,v:true,args:[,]},{func:1,v:true,args:[P.b]}]
+init.types=[{func:1},{func:1,args:[,]},{func:1,v:true},{func:1,v:true,args:[{func:1,v:true}]},{func:1,v:true,args:[,],opt:[P.az]},{func:1,ret:P.a4,args:[P.k]},{func:1,args:[,P.a4]},{func:1,args:[P.a4]},{func:1,args:[{func:1,v:true}]},{func:1,v:true,args:[,,]},{func:1,args:[P.b]},{func:1,args:[,],opt:[,]},{func:1,v:true,args:[,P.az]},{func:1,args:[,,]},{func:1,v:true,args:[P.X]},{func:1,args:[P.k,P.ab]},{func:1,v:true,args:[U.a3]},{func:1,v:true,args:[,]},{func:1,v:true,args:[P.b]}]
 function convertToFastObject(a){function MyClass(){}MyClass.prototype=a
 new MyClass()
 return a}function convertToSlowObject(a){a.__MAGIC_SLOW_PROPERTY=1
