@@ -1,7 +1,9 @@
 name: slot_machine
 version: 2.0.1
 author: Filip Hracek <filip.hracek@gmail.com>
-description: A simple, self-contained class that allows user to put a simple slot machine to the DOM.
+description: >
+  A simple, self-contained class that allows user to put a simple slot machine
+  to the DOM.
 homepage: https://github.com/filiph/slot_machine
 dependencies:
-  browser: '>=0.10.0+2 <0.11.0'
+  browser: ^0.10.0+2
