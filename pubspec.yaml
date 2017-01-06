@@ -5,5 +5,7 @@ description: >
   A simple, self-contained class that allows user to put a simple slot machine
   to the DOM.
 homepage: https://github.com/filiph/slot_machine
+environment:
+  sdk: ">=1.8.0 <2.0.0"
 dependencies:
   browser: ^0.10.0+2
