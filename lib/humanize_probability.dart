@@ -2,7 +2,7 @@
 ///
 /// [probability] should be between `0.0` and `1.0`, inclusive. Behavior outside
 /// that range is undefined.
-String humaninzeProbability(num probability) {
+String humanizeProbability(num probability) {
   if (probability >= 1.0) {
     return "sure";
   }
