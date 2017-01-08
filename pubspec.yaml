@@ -1,5 +1,5 @@
 name: slot_machine
-version: 2.1.0
+version: 2.1.1
 author: Filip Hracek <filip.hracek@gmail.com>
 description: >
   A simple, self-contained class that allows user to put a simple slot machine
