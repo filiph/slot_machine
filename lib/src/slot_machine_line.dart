@@ -1,12 +1,7 @@
 part of slot_machine;
 
 class _SlotMachineLine {
-  static const int slotCount = 10;
-
   static const int minFullSpeedMilliseconds = 500;
-
-  /// The injected random instance.
-  final Random _random;
 
   static const int _minInitialSpeed = 10000;
 
@@ -22,6 +17,9 @@ class _SlotMachineLine {
   /// If this was `0`, any variance in rounding could mean that we end up
   /// under- or over-shooting our desired position.
   static const double _randomOffsetMargin = 0.3;
+
+  /// The injected random instance.
+  final Random _random;
 
   final int _successSymbolsCount;
 
@@ -70,11 +68,11 @@ class _SlotMachineLine {
       this.failureSource,
       this._random,
       {this.predeterminedResult}) {
-    _values = new List<bool>.filled(slotCount, false);
+    _values = new List<bool>.filled(SlotMachineAnimation.slotCount, false);
 
     int successValuesCurrent = 0;
     while (successValuesCurrent < _successSymbolsCount) {
-      final index = _random.nextInt(slotCount);
+      final index = _random.nextInt(SlotMachineAnimation.slotCount);
       if (_values[index] == false) {
         _values[index] = true;
         successValuesCurrent += 1;
@@ -111,9 +109,9 @@ class _SlotMachineLine {
           "values of slot are $_values (all success or all failure).");
     }
 
-    int index = _random.nextInt(slotCount);
+    int index = _random.nextInt(SlotMachineAnimation.slotCount);
     while (_values[index] != predeterminedResult) {
-      index = (index + 1) % slotCount;
+      index = (index + 1) % SlotMachineAnimation.slotCount;
     }
 
     /// Create target position.
@@ -153,14 +151,15 @@ class _SlotMachineLine {
       _pos += (dt * speed * height).round();
     }
 
-    final normalizedPos = (_pos / _resolution) % (height * slotCount);
+    final normalizedPos =
+        (_pos / _resolution) % (height * SlotMachineAnimation.slotCount);
 
     final topIndex = (normalizedPos / height).floor();
-    currentResult = _values[(topIndex - 2) % slotCount];
+    currentResult = _values[(topIndex - 2) % SlotMachineAnimation.slotCount];
     for (int i = 0; i < 3 + 1; i++) {
       final index = topIndex - i;
       drawSquare((normalizedPos % height) - height + (height * i),
-          _values[index % slotCount]);
+          _values[index % SlotMachineAnimation.slotCount]);
     }
   }
 }

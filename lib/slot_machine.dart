@@ -41,6 +41,8 @@ class SlotMachineAnimation {
   /// The number of lines (symbols) per each slot.
   final int slotLines = 5;
 
+  static const int slotCount = 10;
+
   /// The width of each slot in pixels.
   final int width = 40;
 
@@ -114,7 +116,8 @@ class SlotMachineAnimation {
     _ctx = canvasEl.context2D;
     resultEl = new SpanElement();
 
-    final predeterminedValues = _fillPredeterminedValues(predeterminedResult);
+    final predeterminedValues =
+        _fillPredeterminedValues(linesSuccessSymbols, predeterminedResult);
 
     _lines = new List<_SlotMachineLine>(slotLines);
     for (int i = 0; i < slotLines; i += 1) {
@@ -190,23 +193,30 @@ class SlotMachineAnimation {
     return _rollCompleter.future;
   }
 
-  List<bool> _fillPredeterminedValues(Result predeterminedResult) {
+  List<bool> _fillPredeterminedValues(
+      List<int> linesSuccessSymbols, Result predeterminedResult) {
     if (predeterminedResult == null) {
       return new List<bool>.filled(slotLines, null, growable: false);
     }
 
     if (predeterminedResult == Result.criticalSuccess) {
       if (!allowCriticalSuccess) throw new ArgumentError(predeterminedResult);
+      assert(linesSuccessSymbols.every((count) => count > 0));
       return new List<bool>.filled(slotLines, true, growable: false);
     }
 
     if (predeterminedResult == Result.criticalFailure) {
       if (!allowCriticalFailure) throw new ArgumentError(predeterminedResult);
+      assert(linesSuccessSymbols.every((count) => count < slotCount));
       return new List<bool>.filled(slotLines, false, growable: false);
     }
 
     final valuesMin = (slotLines / 2).ceil();
-    var valuesMax = slotLines;
+    var valuesMax = linesSuccessSymbols
+        .where((countSuccesses) => predeterminedResult == Result.success
+            ? countSuccesses > 0
+            : countSuccesses < slotCount)
+        .length;
 
     // If we allow criticals, make sure we don't accidentally roll one.
     if (allowCriticalSuccess && predeterminedResult == Result.success) {
@@ -217,6 +227,10 @@ class SlotMachineAnimation {
       valuesMax -= 1;
     }
 
+    assert(valuesMax >= valuesMin);
+
+    // TODO: make this more natural? Currently, all 5 successes is exactly as
+    // likely as 3 successes and 4 successes.
     final valuesTarget = valuesMin + _random.nextInt(valuesMax - valuesMin + 1);
 
     final value = predeterminedResult == Result.success ? true : false;
@@ -229,6 +243,16 @@ class SlotMachineAnimation {
 
     while (filled < valuesTarget) {
       final index = _random.nextInt(slotLines);
+      if (predeterminedResult == Result.success &&
+          linesSuccessSymbols[index] == 0) {
+        // This line can't have a success.
+        continue;
+      }
+      if (predeterminedResult == Result.failure &&
+          linesSuccessSymbols[index] == slotCount) {
+        // This line can't have a failure.
+        continue;
+      }
       if (values[index] == oppositeValue) {
         values[index] = value;
         filled += 1;

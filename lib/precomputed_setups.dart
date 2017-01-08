@@ -62,6 +62,15 @@ num findClosest(num target, Iterable<num> list) {
 /// Takes a probability of success that we want to see from the slot machine
 /// as a whole and returns precomputed setup that will create such slot machine.
 List<int> getPrecomputedSetup(num desiredProbability) {
+  if (desiredProbability > 0.0 && desiredProbability < 0.05) {
+    // Prevent non-winnable setups for percentages like 3%.
+    return precomputedSetups[5];
+  }
+  if (desiredProbability > 0.95 && desiredProbability < 1.0) {
+    // Prevent non-fail-able setups for percentages like 99%.
+    return precomputedSetups[95];
+  }
+
   num probability = desiredProbability * 100 / precisionSteps; // ex. 6.4
   probability = probability.round(); // ex. 6.0
   probability *= precisionSteps; // ex. 60
