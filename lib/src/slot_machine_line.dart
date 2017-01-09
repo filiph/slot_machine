@@ -119,14 +119,11 @@ class _SlotMachineLine {
     final randomOffset = margin + _random.nextInt(height - 2 * margin);
     int pos = (((index + 1) * height + randomOffset) * _resolution).round();
 
-    int speed = minSpeed;
-    while (speed < this.speed) {
-      // Do this until speed reaches the initial [_SlotMachineLine.speed].
-      final dt = SlotMachineAnimation._maximumDt ~/ 5;
-      pos -= (dt * speed * height).round();
-      speed += drag * dt;
-      // TODO: make a single computation out of this loop - integral
-    }
+    // v = v0 + a * t
+    int t = ((this.speed - minSpeed) / drag).round();
+
+    // y = y0 + v0 * t + 1/2 * a * t^2
+    pos = (pos - minSpeed * height * t - 0.5 * drag * height * t * t).round();
 
     pos -= fullSpeedMilliseconds * this.speed * height;
 
@@ -134,6 +131,12 @@ class _SlotMachineLine {
   }
 
   void update(num dt) {
+    if (!isFinished) {
+      // y = y0 + v0 * t + 1/2 * a * t^2
+      _pos =
+          (_pos + speed * height * dt - 0.5 * drag * height * dt * dt).round();
+    }
+
     if (isSlowingDown && !isFinished) {
       if (speed <= minSpeed) {
         if (((_pos / _resolution) % height).abs() < height / 20) {
@@ -146,10 +149,6 @@ class _SlotMachineLine {
     }
 
     clear();
-
-    if (!isFinished) {
-      _pos += (dt * speed * height).round();
-    }
 
     final normalizedPos =
         (_pos / _resolution) % (height * SlotMachineAnimation.slotCount);
