@@ -1,5 +1,5 @@
 name: slot_machine
-version: 2.1.6
+version: 3.0.0
 author: Filip Hracek <filip.hracek@gmail.com>
 description: >
   A simple, self-contained class that allows user to put a simple slot machine
@@ -10,4 +10,4 @@ environment:
 dependencies:
   browser: ^0.10.0+2
 dev_dependencies:
-  test: any
+  test: ^0.12.18+1
