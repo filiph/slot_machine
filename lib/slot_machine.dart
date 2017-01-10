@@ -38,10 +38,11 @@ class SlotMachineAnimation {
 
   static final Random _random = new Random();
 
-  /// The number of lines (symbols) per each slot.
-  final int slotLines = 5;
-
+  /// Number of symbols in one vertical row.
   static const int slotCount = 10;
+
+  /// The number of rollers (vertical lines) per each machine.
+  final int slotLines = 5;
 
   /// The width of each slot in pixels.
   final int width = 40;
@@ -229,32 +230,31 @@ class SlotMachineAnimation {
 
     assert(valuesMax >= valuesMin);
 
-    // TODO: make this more natural? Currently, all 5 successes is exactly as
-    // likely as 3 successes and 4 successes.
-    final valuesTarget = valuesMin + _random.nextInt(valuesMax - valuesMin + 1);
+    final neededValue = predeterminedResult == Result.success ? true : false;
 
-    final value = predeterminedResult == Result.success ? true : false;
-    final oppositeValue = !value;
+    final values = new List<bool>.filled(slotLines, null, growable: false);
 
-    final values =
-        new List<bool>.filled(slotLines, oppositeValue, growable: false);
+    // Automatically assign values to reels that have all success or all
+    // failure symbols.
+    for (int i = 0; i < slotLines; i += 1) {
+      if (linesSuccessSymbols[i] == 0) {
+        values[i] = false;
+        continue;
+      }
 
-    var filled = 0;
+      if (linesSuccessSymbols[i] == slotCount) {
+        values[i] = true;
+      }
+    }
 
-    while (filled < valuesTarget) {
+    // Compute how many desired values we already have filled.
+    var filled =
+        values.fold(0, (prev, el) => prev + (el == neededValue ? 1 : 0));
+
+    while (filled < valuesMin) {
       final index = _random.nextInt(slotLines);
-      if (predeterminedResult == Result.success &&
-          linesSuccessSymbols[index] == 0) {
-        // This line can't have a success.
-        continue;
-      }
-      if (predeterminedResult == Result.failure &&
-          linesSuccessSymbols[index] == slotCount) {
-        // This line can't have a failure.
-        continue;
-      }
-      if (values[index] == oppositeValue) {
-        values[index] = value;
+      if (values[index] == null) {
+        values[index] = neededValue;
         filled += 1;
       }
     }

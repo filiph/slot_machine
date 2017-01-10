@@ -120,7 +120,7 @@ class _SlotMachineLine {
     int pos = (((index + 1) * height + randomOffset) * _resolution).round();
 
     // v = v0 + a * t
-    int t = ((this.speed - minSpeed) / drag).round();
+    final t = ((this.speed - minSpeed) / drag).round();
 
     // y = y0 + v0 * t + 1/2 * a * t^2
     pos = (pos - minSpeed * height * t - 0.5 * drag * height * t * t).round();

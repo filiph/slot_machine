@@ -8,11 +8,11 @@ void main() {
   test("a 99% can consistently fail when predetermined", () {
     int count = 0;
     for (int i = 0; i < 100; i++) {
-      var machine = new SlotMachineAnimation.fromProbability(0.99,
+      final machine = new SlotMachineAnimation.fromProbability(0.99,
           predeterminedResult: Result.failure);
       document.body.append(machine.canvasEl);
       document.body.append(machine.resultEl);
-      var result = machine.roll();
+      final result = machine.roll();
       result.then(expectAsync1((result) {
         if (result != Result.failure) {
           print("bad result with $i: $result "
