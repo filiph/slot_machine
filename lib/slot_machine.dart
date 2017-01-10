@@ -9,7 +9,7 @@ import 'package:slot_machine/result.dart';
 
 export 'package:slot_machine/result.dart';
 
-part 'src/slot_machine_line.dart';
+part 'src/reel.dart';
 
 /// A class that creates the slot machine.
 ///
@@ -38,16 +38,16 @@ class SlotMachineAnimation {
 
   static final Random _random = new Random();
 
-  /// Number of symbols in one vertical row.
-  static const int slotCount = 10;
+  /// Number of symbols in each reel.
+  static const int symbolCount = 10;
 
-  /// The number of rollers (vertical lines) per each machine.
-  final int slotLines = 5;
+  /// The number of reels (vertical lines) per each machine.
+  static const int reelCount = 5;
 
-  /// The width of each slot in pixels.
+  /// The width of each reel in pixels.
   final int width = 40;
 
-  /// The height of each slot line (symbol).
+  /// The height of each symbol. By default it's the same as width.
   int _height;
 
   /// Whether or not to allow this slot machine to return critical successes.
@@ -78,7 +78,7 @@ class SlotMachineAnimation {
   /// show it.
   SpanElement resultEl;
 
-  List<_SlotMachineLine> _lines;
+  List<_Reel> _lines;
 
   Completer<Result> _rollCompleter;
 
@@ -93,43 +93,53 @@ class SlotMachineAnimation {
   /// machine) being [probability].
   factory SlotMachineAnimation.fromProbability(num probability,
       {Result predeterminedResult}) {
-    assert(probability > 0 || predeterminedResult != Result.success);
-    assert(probability < 1 || predeterminedResult != Result.failure);
+    if (probability == 0 && predeterminedResult == Result.success) {
+      throw new ArgumentError("Cannot have predetermined $predeterminedResult "
+          "with probability of $probability.");
+    }
+    if (probability == 1 && predeterminedResult == Result.failure) {
+      throw new ArgumentError("Cannot have predetermined $predeterminedResult "
+          "with probability of $probability.");
+    }
+    if (probability < 0 || probability > 1) {
+      throw new ArgumentError("Probability must be between 0 and 1. Provided "
+          "value: $probability.");
+    }
     final setup = getPrecomputedSetup(probability);
     return new SlotMachineAnimation._(setup,
         predeterminedResult: predeterminedResult);
   }
 
   /// Create a [SlotMachineAnimation] by giving probability of success per
-  /// each slot with [linesSuccessSymbols].
+  /// each slot with [reelSuccessCounts].
   ///
   /// Indicate what kinds of results to allow with [allowCriticalSuccess]
   /// and [allowCriticalFailure].
-  SlotMachineAnimation._(List<int> linesSuccessSymbols,
+  SlotMachineAnimation._(List<int> reelSuccessCounts,
       {this.allowCriticalSuccess: false,
       this.allowCriticalFailure: false,
       Result predeterminedResult}) {
-    assert(linesSuccessSymbols.length == slotLines);
+    assert(reelSuccessCounts.length == reelCount);
 
     _height = width;
 
-    canvasEl = new CanvasElement(width: width * slotLines, height: width * 3);
+    canvasEl = new CanvasElement(width: width * reelCount, height: width * 3);
     _ctx = canvasEl.context2D;
     resultEl = new SpanElement();
 
     final predeterminedValues =
-        _fillPredeterminedValues(linesSuccessSymbols, predeterminedResult);
+        _fillPredeterminedValues(reelSuccessCounts, predeterminedResult);
 
-    _lines = new List<_SlotMachineLine>(slotLines);
-    for (int i = 0; i < slotLines; i += 1) {
-      _lines[i] = new _SlotMachineLine(linesSuccessSymbols[i], _ctx, i * width,
-          width, _height, _successIcon, _failureIcon, _random,
+    _lines = new List<_Reel>(reelCount);
+    for (int i = 0; i < reelCount; i += 1) {
+      _lines[i] = new _Reel(reelSuccessCounts[i], _ctx, i * width, width,
+          _height, _successIcon, _failureIcon, _random,
           predeterminedResult: predeterminedValues[i]);
     }
-    _currentResults = new List<bool>(slotLines);
+    _currentResults = new List<bool>(reelCount);
 
-    if (slotLines % 2 == 0) {
-      throw new ArgumentError("Slots need to be an odd number.");
+    if (reelCount % 2 == 0) {
+      throw new ArgumentError("Reels need to be an odd number.");
     }
 
     // Prepare gradient
@@ -149,12 +159,12 @@ class SlotMachineAnimation {
     }
     final positives = _currentResults.fold(
         0, (int sum, bool result) => sum += result ? 1 : 0);
-    final negatives = slotLines - positives;
+    final negatives = reelCount - positives;
 
-    if (allowCriticalSuccess && positives == slotLines) {
+    if (allowCriticalSuccess && positives == reelCount) {
       return Result.criticalSuccess;
     }
-    if (allowCriticalFailure && negatives == slotLines) {
+    if (allowCriticalFailure && negatives == reelCount) {
       return Result.criticalFailure;
     }
     if (positives > negatives) return Result.success;
@@ -195,28 +205,28 @@ class SlotMachineAnimation {
   }
 
   List<bool> _fillPredeterminedValues(
-      List<int> linesSuccessSymbols, Result predeterminedResult) {
+      List<int> reelSuccessCounts, Result predeterminedResult) {
     if (predeterminedResult == null) {
-      return new List<bool>.filled(slotLines, null, growable: false);
+      return new List<bool>.filled(reelCount, null, growable: false);
     }
 
     if (predeterminedResult == Result.criticalSuccess) {
       if (!allowCriticalSuccess) throw new ArgumentError(predeterminedResult);
-      assert(linesSuccessSymbols.every((count) => count > 0));
-      return new List<bool>.filled(slotLines, true, growable: false);
+      assert(reelSuccessCounts.every((count) => count > 0));
+      return new List<bool>.filled(reelCount, true, growable: false);
     }
 
     if (predeterminedResult == Result.criticalFailure) {
       if (!allowCriticalFailure) throw new ArgumentError(predeterminedResult);
-      assert(linesSuccessSymbols.every((count) => count < slotCount));
-      return new List<bool>.filled(slotLines, false, growable: false);
+      assert(reelSuccessCounts.every((count) => count < symbolCount));
+      return new List<bool>.filled(reelCount, false, growable: false);
     }
 
-    final valuesMin = (slotLines / 2).ceil();
-    var valuesMax = linesSuccessSymbols
+    final valuesMin = (reelCount / 2).ceil();
+    var valuesMax = reelSuccessCounts
         .where((countSuccesses) => predeterminedResult == Result.success
             ? countSuccesses > 0
-            : countSuccesses < slotCount)
+            : countSuccesses < symbolCount)
         .length;
 
     // If we allow criticals, make sure we don't accidentally roll one.
@@ -228,21 +238,24 @@ class SlotMachineAnimation {
       valuesMax -= 1;
     }
 
-    assert(valuesMax >= valuesMin);
+    if (valuesMax < valuesMin) {
+      throw new ArgumentError("Cannot predetermine $predeterminedResult for "
+          "a machine with setup $reelSuccessCounts");
+    }
 
     final neededValue = predeterminedResult == Result.success ? true : false;
 
-    final values = new List<bool>.filled(slotLines, null, growable: false);
+    final values = new List<bool>.filled(reelCount, null, growable: false);
 
     // Automatically assign values to reels that have all success or all
     // failure symbols.
-    for (int i = 0; i < slotLines; i += 1) {
-      if (linesSuccessSymbols[i] == 0) {
+    for (int i = 0; i < reelCount; i += 1) {
+      if (reelSuccessCounts[i] == 0) {
         values[i] = false;
         continue;
       }
 
-      if (linesSuccessSymbols[i] == slotCount) {
+      if (reelSuccessCounts[i] == symbolCount) {
         values[i] = true;
       }
     }
@@ -252,7 +265,7 @@ class SlotMachineAnimation {
         values.fold(0, (prev, el) => prev + (el == neededValue ? 1 : 0));
 
     while (filled < valuesMin) {
-      final index = _random.nextInt(slotLines);
+      final index = _random.nextInt(reelCount);
       if (values[index] == null) {
         values[index] = neededValue;
         filled += 1;
@@ -277,7 +290,7 @@ class SlotMachineAnimation {
       return;
     }
 
-    for (int i = 0; i < slotLines; i++) {
+    for (int i = 0; i < reelCount; i++) {
       final line = _lines[i];
       if (_timeOfStartOfRoll != null &&
           _lastTime - _timeOfStartOfRoll > line.fullSpeedMilliseconds) {
@@ -289,14 +302,14 @@ class SlotMachineAnimation {
 
     // Draw the gradient overlay.
     _ctx.fillStyle = _gradient;
-    _ctx.fillRect(0, 0, width * slotLines, _height * 3);
+    _ctx.fillRect(0, 0, width * reelCount, _height * 3);
 
     // Fade in.
     if (_timeOfStartOfRoll != null &&
         _lastTime - _timeOfStartOfRoll < _fadeInMilliseconds) {
       _ctx.fillStyle = "rgba(255, 255, 255, "
           "${1 - (_lastTime - _timeOfStartOfRoll) / _fadeInMilliseconds})";
-      _ctx.fillRect(0, 0, width * slotLines, _height * 3);
+      _ctx.fillRect(0, 0, width * reelCount, _height * 3);
     }
 
     resultEl.text = _currentResultText;

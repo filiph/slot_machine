@@ -26,9 +26,19 @@ void main() {
   }, skip: true);
 
   test("a 90% predetermined to fail will always generate itself", () {
-    for (int i = 0; i < 10000; i++) {
-      expect(() => new SlotMachineAnimation.fromProbability(0.9,
-          predeterminedResult: Result.failure), returnsNormally);
+    for (int i = 0; i < 1000; i++) {
+      expect(
+          () => new SlotMachineAnimation.fromProbability(0.9,
+                  predeterminedResult: Result.failure)
+              .roll(),
+          returnsNormally);
     }
+  });
+
+  test("a 100% predetermined to fail will throw", () {
+    expect(
+        () => new SlotMachineAnimation.fromProbability(1.0,
+            predeterminedResult: Result.failure),
+        throwsArgumentError);
   });
 }
