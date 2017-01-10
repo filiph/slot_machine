@@ -8,7 +8,7 @@ void main() {
   test("a 99% can consistently fail when predetermined", () {
     int count = 0;
     for (int i = 0; i < 100; i++) {
-      final machine = new SlotMachineAnimation.fromProbability(0.99,
+      final machine = new SlotMachine.fromProbability(0.99,
           predeterminedResult: Result.failure);
       document.body.append(machine.canvasEl);
       document.body.append(machine.resultEl);
@@ -28,7 +28,7 @@ void main() {
   test("a 90% predetermined to fail will always generate itself", () {
     for (int i = 0; i < 1000; i++) {
       expect(
-          () => new SlotMachineAnimation.fromProbability(0.9,
+          () => new SlotMachine.fromProbability(0.9,
                   predeterminedResult: Result.failure)
               .roll(),
           returnsNormally);
@@ -37,7 +37,7 @@ void main() {
 
   test("a 100% predetermined to fail will throw", () {
     expect(
-        () => new SlotMachineAnimation.fromProbability(1.0,
+        () => new SlotMachine.fromProbability(1.0,
             predeterminedResult: Result.failure),
         throwsArgumentError);
   });

@@ -23,7 +23,7 @@ void main() {
     container.children.clear();
     resultEl.children.clear();
 
-    final slotMachine = new SlotMachineAnimation.fromProbability(probability,
+    final slotMachine = new SlotMachine.fromProbability(probability,
         predeterminedResult: predeterminedResult);
     container.append(slotMachine.canvasEl);
     resultEl.append(slotMachine.resultEl);

@@ -18,9 +18,9 @@ part 'src/reel.dart';
 /// the slot machine itself, with rotating slots. [resultEl] is a span element
 /// that automatically populates with the current outcome in real time.
 ///
-/// The SlotMachineAnimation is single-serving, i.e. it cannot be rolled more
+/// The SlotMachine is single-serving, i.e. it cannot be rolled more
 /// than once.
-class SlotMachineAnimation {
+class SlotMachine {
   static const int _fadeInMilliseconds = 500;
 
   /// The maximum dt that the update method allows.
@@ -91,7 +91,7 @@ class SlotMachineAnimation {
 
   /// Create a slot machine animation with probability of success (of the whole
   /// machine) being [probability].
-  factory SlotMachineAnimation.fromProbability(num probability,
+  factory SlotMachine.fromProbability(num probability,
       {Result predeterminedResult}) {
     if (probability == 0 && predeterminedResult == Result.success) {
       throw new ArgumentError("Cannot have predetermined $predeterminedResult "
@@ -106,16 +106,15 @@ class SlotMachineAnimation {
           "value: $probability.");
     }
     final setup = getPrecomputedSetup(probability);
-    return new SlotMachineAnimation._(setup,
-        predeterminedResult: predeterminedResult);
+    return new SlotMachine._(setup, predeterminedResult: predeterminedResult);
   }
 
-  /// Create a [SlotMachineAnimation] by giving probability of success per
+  /// Create a [SlotMachine] by giving probability of success per
   /// each slot with [reelSuccessCounts].
   ///
   /// Indicate what kinds of results to allow with [allowCriticalSuccess]
   /// and [allowCriticalFailure].
-  SlotMachineAnimation._(List<int> reelSuccessCounts,
+  SlotMachine._(List<int> reelSuccessCounts,
       {this.allowCriticalSuccess: false,
       this.allowCriticalFailure: false,
       Result predeterminedResult}) {

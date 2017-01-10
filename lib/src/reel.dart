@@ -61,11 +61,11 @@ class _Reel {
   _Reel(this._successSymbolsCount, this._ctx, this.leftOffset, this.width,
       this.height, this.successSource, this.failureSource, this._random,
       {this.predeterminedResult}) {
-    _values = new List<bool>.filled(SlotMachineAnimation.symbolCount, false);
+    _values = new List<bool>.filled(SlotMachine.symbolCount, false);
 
     int successValuesCurrent = 0;
     while (successValuesCurrent < _successSymbolsCount) {
-      final index = _random.nextInt(SlotMachineAnimation.symbolCount);
+      final index = _random.nextInt(SlotMachine.symbolCount);
       if (_values[index] == false) {
         _values[index] = true;
         successValuesCurrent += 1;
@@ -102,9 +102,9 @@ class _Reel {
           "values of slot are $_values (all success or all failure).");
     }
 
-    int index = _random.nextInt(SlotMachineAnimation.symbolCount);
+    int index = _random.nextInt(SlotMachine.symbolCount);
     while (_values[index] != predeterminedResult) {
-      index = (index + 1) % SlotMachineAnimation.symbolCount;
+      index = (index + 1) % SlotMachine.symbolCount;
     }
 
     /// Create target position.
@@ -144,14 +144,14 @@ class _Reel {
     clear();
 
     final normalizedPos =
-        (_pos / _resolution) % (height * SlotMachineAnimation.symbolCount);
+        (_pos / _resolution) % (height * SlotMachine.symbolCount);
 
     final topIndex = (normalizedPos / height).floor();
-    currentResult = _values[(topIndex - 2) % SlotMachineAnimation.symbolCount];
+    currentResult = _values[(topIndex - 2) % SlotMachine.symbolCount];
     for (int i = 0; i < 3 + 1; i++) {
       final index = topIndex - i;
       drawSquare((normalizedPos % height) - height + (height * i),
-          _values[index % SlotMachineAnimation.symbolCount]);
+          _values[index % SlotMachine.symbolCount]);
     }
   }
 }
