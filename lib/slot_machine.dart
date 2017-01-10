@@ -222,28 +222,7 @@ class SlotMachine {
     }
 
     final valuesMin = (reelCount / 2).ceil();
-    var valuesMax = reelSuccessCounts
-        .where((countSuccesses) => predeterminedResult == Result.success
-            ? countSuccesses > 0
-            : countSuccesses < symbolCount)
-        .length;
-
-    // If we allow criticals, make sure we don't accidentally roll one.
-    if (allowCriticalSuccess && predeterminedResult == Result.success) {
-      valuesMax -= 1;
-    }
-
-    if (allowCriticalFailure && predeterminedResult == Result.failure) {
-      valuesMax -= 1;
-    }
-
-    if (valuesMax < valuesMin) {
-      throw new ArgumentError("Cannot predetermine $predeterminedResult for "
-          "a machine with setup $reelSuccessCounts");
-    }
-
     final neededValue = predeterminedResult == Result.success ? true : false;
-
     final values = new List<bool>.filled(reelCount, null, growable: false);
 
     // Automatically assign values to reels that have all success or all
@@ -271,7 +250,31 @@ class SlotMachine {
       }
     }
 
+    // Make sure we don't accidentally roll critical success or failure when
+    // allowed (but not predetermined).
+    if (allowCriticalSuccess && predeterminedResult == Result.success) {
+      _switchOneNullToValue(values, false, reelSuccessCounts);
+    }
+    if (allowCriticalFailure && predeterminedResult == Result.failure) {
+      _switchOneNullToValue(values, true, reelSuccessCounts);
+    }
+
     return values;
+  }
+
+  void _switchOneNullToValue(
+      List<bool> values, bool value, List<int> reelSuccessCounts) {
+    int index = _random.nextInt(reelCount);
+    int tries = 0;
+    while (values[index] != null) {
+      index = (index + 1) % SlotMachine.symbolCount;
+      if (tries > symbolCount) {
+        throw new ArgumentError("Cannot prevent critical success or failure "
+            "with given reelSuccessCounts: $reelSuccessCounts.");
+      }
+    }
+
+    values[index] = value;
   }
 
   /// Called each frame to update the animation.
