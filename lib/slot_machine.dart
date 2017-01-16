@@ -11,6 +11,10 @@ export 'package:slot_machine/result.dart';
 
 part 'src/reel.dart';
 
+/// A function type that allows users of this library to provide their own
+/// [Window.animationFrame].
+typedef Future<num> AnimationFrameFunction();
+
 /// A class that creates the slot machine.
 ///
 /// It currently only creates slot machines with 5 slot lines, 10 images each.
@@ -78,9 +82,11 @@ class SlotMachine {
   /// show it.
   SpanElement resultEl;
 
-  List<_Reel> _lines;
+  List<_Reel> _reels;
 
   Completer<Result> _rollCompleter;
+
+  final AnimationFrameFunction _animationFrame;
 
   num _lastTime = 0;
 
@@ -92,7 +98,7 @@ class SlotMachine {
   /// Create a slot machine animation with probability of success (of the whole
   /// machine) being [probability].
   factory SlotMachine.fromProbability(num probability,
-      {Result predeterminedResult}) {
+      {Result predeterminedResult, AnimationFrameFunction animationFrame}) {
     if (probability == 0 && predeterminedResult == Result.success) {
       throw new ArgumentError("Cannot have predetermined $predeterminedResult "
           "with probability of $probability.");
@@ -106,7 +112,9 @@ class SlotMachine {
           "value: $probability.");
     }
     final setup = getPrecomputedSetup(probability);
-    return new SlotMachine._(setup, predeterminedResult: predeterminedResult);
+    return new SlotMachine._(setup,
+        predeterminedResult: predeterminedResult,
+        animationFrame: animationFrame);
   }
 
   /// Create a [SlotMachine] by giving probability of success per
@@ -117,7 +125,9 @@ class SlotMachine {
   SlotMachine._(List<int> reelSuccessCounts,
       {this.allowCriticalSuccess: false,
       this.allowCriticalFailure: false,
-      Result predeterminedResult}) {
+      Result predeterminedResult,
+      AnimationFrameFunction animationFrame})
+      : _animationFrame = animationFrame {
     assert(reelSuccessCounts.length == reelCount);
 
     _height = width;
@@ -129,9 +139,9 @@ class SlotMachine {
     final predeterminedValues =
         _fillPredeterminedValues(reelSuccessCounts, predeterminedResult);
 
-    _lines = new List<_Reel>(reelCount);
+    _reels = new List<_Reel>(reelCount);
     for (int i = 0; i < reelCount; i += 1) {
-      _lines[i] = new _Reel(reelSuccessCounts[i], _ctx, i * width, width,
+      _reels[i] = new _Reel(reelSuccessCounts[i], _ctx, i * width, width,
           _height, _successIcon, _failureIcon, _random,
           predeterminedResult: predeterminedValues[i]);
     }
@@ -268,6 +278,7 @@ class SlotMachine {
     int tries = 0;
     while (values[index] != null) {
       index = (index + 1) % SlotMachine.symbolCount;
+      tries += 1;
       if (tries > symbolCount) {
         throw new ArgumentError("Cannot prevent critical success or failure "
             "with given reelSuccessCounts: $reelSuccessCounts.");
@@ -286,20 +297,16 @@ class SlotMachine {
     if (dt > _maximumDt) dt = _maximumDt; // Disallow huge dt steps.
     _lastTime = timeFromStartOfPage;
 
-    if (_lines.every((line) => line.isFinished)) {
+    if (_reels.every((line) => line.isFinished)) {
       resultEl.text = _currentResultText;
       _rollCompleter.complete(_currentResult);
       return;
     }
 
     for (int i = 0; i < reelCount; i++) {
-      final line = _lines[i];
-      if (_timeOfStartOfRoll != null &&
-          _lastTime - _timeOfStartOfRoll > line.fullSpeedMilliseconds) {
-        line.isSlowingDown = true;
-      }
-      line.update(dt);
-      _currentResults[i] = line.currentResult;
+      final reel = _reels[i];
+      reel.update(dt);
+      _currentResults[i] = reel.currentResult;
     }
 
     // Draw the gradient overlay.
@@ -316,6 +323,10 @@ class SlotMachine {
 
     resultEl.text = _currentResultText;
 
-    window.animationFrame.then(_update);
+    if (_animationFrame != null) {
+      _animationFrame().then(_update);
+    } else {
+      window.animationFrame.then(_update);
+    }
   }
 }

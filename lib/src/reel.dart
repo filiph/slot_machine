@@ -44,7 +44,7 @@ class _Reel {
 
   int drag = 5;
 
-  bool isSlowingDown = false;
+  bool _isSlowingDown = false;
 
   bool isFinished = false;
 
@@ -53,6 +53,8 @@ class _Reel {
   final CanvasImageSource failureSource;
 
   int _pos = 0;
+
+  num _time = 0;
 
   bool currentResult;
 
@@ -124,13 +126,19 @@ class _Reel {
   }
 
   void update(num dt) {
+    _time += dt;
+
     if (!isFinished) {
       // y = y0 + v0 * t + 1/2 * a * t^2
       _pos =
           (_pos + speed * height * dt - 0.5 * drag * height * dt * dt).round();
     }
 
-    if (isSlowingDown && !isFinished) {
+    if (!_isSlowingDown && _time > fullSpeedMilliseconds) {
+      _isSlowingDown = true;
+    }
+
+    if (_isSlowingDown && !isFinished) {
       if (speed <= minSpeed) {
         if (((_pos / _resolution) % height).abs() < height / 20) {
           speed = 0;
