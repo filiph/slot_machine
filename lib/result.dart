@@ -1,6 +1,6 @@
 library slot_machine.result;
 
-/// The result of a slot machine roll.
+/// A single result of a slot machine roll.
 enum Result {
   /// Normal success.
   success,
