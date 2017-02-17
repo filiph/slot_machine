@@ -162,4 +162,9 @@ class _Reel {
           _values[index % SlotMachine.symbolCount]);
     }
   }
+
+  void reroll() {
+    isFinished = false;
+    speed = _minInitialSpeed + (_random.nextInt(_minInitialSpeed) / 10).round();
+  }
 }

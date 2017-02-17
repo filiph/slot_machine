@@ -4,12 +4,11 @@ import 'package:slot_machine/slot_machine.dart';
 
 void main() {
   final container = querySelector("#slot_container");
+  final rerollContainer = querySelector("#reroll_container");
   final resultEl = querySelector("#slot_result");
   final RangeInputElement probabilityEl = querySelector("#probability");
   final probabilitySpan = querySelector("#probability_span");
   final randomButton = querySelector("#random_button");
-  final successButton = querySelector("#success_button");
-  final failButton = querySelector("#fail_button");
 
   // Allow setting up probability.
   num probability = 0.75;
@@ -19,18 +18,18 @@ void main() {
   });
 
   // Handle click of buttons.
-  void handle(Result predeterminedResult) {
+  void handle(_) {
     container.children.clear();
+    rerollContainer.children.clear();
     resultEl.children.clear();
 
-    final slotMachine = new SlotMachine.fromProbability(probability,
-        predeterminedResult: predeterminedResult);
+    final slotMachine = new SlotMachine(probability,
+        rerollable: true, rerollEffectDescription: "use coin");
     container.append(slotMachine.canvasEl);
+    rerollContainer.append(slotMachine.rerollEl);
     resultEl.append(slotMachine.resultEl);
-    slotMachine.roll().then(print);
+    slotMachine.play().then(print);
   }
 
-  randomButton.onClick.listen((_) => handle(null));
-  successButton.onClick.listen((_) => handle(Result.success));
-  failButton.onClick.listen((_) => handle(Result.failure));
+  randomButton.onClick.listen(handle);
 }

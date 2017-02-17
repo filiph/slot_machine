@@ -4,8 +4,9 @@ import 'dart:async';
 import 'dart:html';
 import 'dart:math';
 
-import 'package:slot_machine/precomputed_setups.dart' show getPrecomputedSetup;
 import 'package:slot_machine/result.dart';
+import 'package:slot_machine/src/precomputed_setups.dart'
+    show getPrecomputedSetup;
 
 export 'package:slot_machine/result.dart';
 
@@ -60,6 +61,17 @@ class SlotMachine {
   /// Whether or not to allow this slot machine to return critical failures.
   final bool allowCriticalFailure;
 
+  /// Whether or not this SlotMachine allows rerolling. If so,
+  /// [rerollEffectDescription] must not be `null`.
+  final bool rerollable;
+
+  /// What to show to user as the 'cost' of reroll.
+  ///
+  /// For example, the user can be given the option to spend some gold
+  /// for a chance of reroll. In that case, this field could be set to
+  /// "use 10 gold coins".
+  final String rerollEffectDescription;
+
   /// The canvas element that this library creates and that should be added
   /// to the DOM by the library's user.
   CanvasElement canvasEl;
@@ -78,7 +90,7 @@ class SlotMachine {
   /// what the slot machine would output if it was immediately halted, frozen
   /// in current state).
   ///
-  /// The library's users should add this element to the DOM if the want to
+  /// The library's users should add this element to the DOM if they want to
   /// show it.
   SpanElement resultEl;
 
@@ -95,16 +107,35 @@ class SlotMachine {
   /// A list of booleans evaluating the slots from left to right.
   List<bool> _currentResults;
 
-  /// Create a slot machine animation with probability of success (of the whole
-  /// machine) being [probability].
-  factory SlotMachine.fromProbability(num probability,
-      {Result predeterminedResult, AnimationFrameFunction animationFrame}) {
-    if (probability == 0 && predeterminedResult == Result.success) {
-      throw new ArgumentError("Cannot have predetermined $predeterminedResult "
+  /// Element that the slot machine populates with buttons when reroll
+  /// is in order.
+  DivElement rerollEl;
+
+  Completer<Result> _rerollCompleter;
+
+  bool _wasRerolled = false;
+
+  /// Create a slot machine animation with given [probability] of success.
+  ///
+  /// The first result of the session can be predetermined via
+  /// [predeterminedFirstResult]. If [rerollable] is `false`, then that
+  /// is also the result of the whole session.
+  ///
+  /// If [rerollable] is `true`, there will be a chance for the player
+  /// to reroll.
+  factory SlotMachine(num probability,
+      {Result predeterminedFirstResult,
+      AnimationFrameFunction animationFrame,
+      bool rerollable: false,
+      String rerollEffectDescription}) {
+    if (probability == 0 && predeterminedFirstResult == Result.success) {
+      throw new ArgumentError(
+          "Cannot have predetermined $predeterminedFirstResult "
           "with probability of $probability.");
     }
-    if (probability == 1 && predeterminedResult == Result.failure) {
-      throw new ArgumentError("Cannot have predetermined $predeterminedResult "
+    if (probability == 1 && predeterminedFirstResult == Result.failure) {
+      throw new ArgumentError(
+          "Cannot have predetermined $predeterminedFirstResult "
           "with probability of $probability.");
     }
     if (probability < 0 || probability > 1) {
@@ -113,7 +144,19 @@ class SlotMachine {
     }
     final setup = getPrecomputedSetup(probability);
     return new SlotMachine._(setup,
-        predeterminedResult: predeterminedResult,
+        predeterminedResult: predeterminedFirstResult,
+        animationFrame: animationFrame,
+        rerollable: rerollable,
+        rerollEffectDescription: rerollEffectDescription);
+  }
+
+  /// Create a slot machine animation with probability of success (of the whole
+  /// machine) being [probability].
+  @Deprecated('use SlotMachine() instead')
+  factory SlotMachine.fromProbability(num probability,
+      {Result predeterminedResult, AnimationFrameFunction animationFrame}) {
+    return new SlotMachine(probability,
+        predeterminedFirstResult: predeterminedResult,
         animationFrame: animationFrame);
   }
 
@@ -126,15 +169,22 @@ class SlotMachine {
       {this.allowCriticalSuccess: false,
       this.allowCriticalFailure: false,
       Result predeterminedResult,
-      AnimationFrameFunction animationFrame})
+      AnimationFrameFunction animationFrame,
+      this.rerollable: false,
+      this.rerollEffectDescription})
       : _animationFrame = animationFrame {
     assert(reelSuccessCounts.length == reelCount);
+    assert(
+        !rerollable || rerollEffectDescription != null,
+        "Reroll effect description cannot be null when "
+        "reroll is enabled.");
 
     _height = width;
 
     canvasEl = new CanvasElement(width: width * reelCount, height: width * 3);
     _ctx = canvasEl.context2D;
     resultEl = new SpanElement();
+    rerollEl = new DivElement();
 
     final predeterminedValues =
         _fillPredeterminedValues(reelSuccessCounts, predeterminedResult);
@@ -162,10 +212,8 @@ class SlotMachine {
   }
 
   Result get _currentResult {
-    if (_currentResults.any((result) => result == null)) {
-      throw new StateError("Tried calling _currentResult when some results "
-          "are null.");
-    }
+    assert(_currentResults.every((result) => result != null),
+        "Tried calling _currentResult when some results are null.");
     final positives = _currentResults.fold(
         0, (int sum, bool result) => sum += result ? 1 : 0);
     final negatives = reelCount - positives;
@@ -198,19 +246,41 @@ class SlotMachine {
     }
   }
 
-  /// Start rolling the slot machine. Returns with the text of the result.
-  Future<Result> roll() {
-    if (_rollCompleter != null) {
-      throw new StateError("Cannot roll one slot machine twice.");
+  /// Start the slot machine session. This will roll the reels to completion
+  /// once, and -- if [rerollable] is `true` -- it will also allow the
+  /// user to reroll.
+  ///
+  /// In any case, this method returns the final [SessionResult]. It can
+  /// only be called once.
+  Future<SessionResult> play() async {
+    final firstResult = await _roll();
+    if (firstResult == Result.criticalSuccess ||
+        firstResult == Result.success ||
+        !rerollable) {
+      return new SessionResult(firstResult, false);
     }
-    _rollCompleter = new Completer<Result>();
+    final secondResult = await _offerReroll();
+    return new SessionResult(secondResult, _wasRerolled);
+  }
 
-    Future
-        .wait([_successIcon.onLoad.first, _failureIcon.onLoad.first]).then((_) {
-      _update(0);
-    });
+  /// Start rolling the slot machine. Returns with the text of the result.
+  @Deprecated('Use play() instead')
+  Future<Result> roll() => _roll();
 
-    return _rollCompleter.future;
+  void _cancelButtons(ButtonElement rerollButton, StreamSubscription rerollSub,
+      ButtonElement okayButton, StreamSubscription okaySub) {
+    rerollSub.cancel();
+    okaySub.cancel();
+    rerollButton.disabled = true;
+    okayButton.disabled = true;
+  }
+
+  void _continueAnimation() {
+    if (_animationFrame != null) {
+      _animationFrame().then(_update);
+    } else {
+      window.animationFrame.then(_update);
+    }
   }
 
   List<bool> _fillPredeterminedValues(
@@ -272,6 +342,51 @@ class SlotMachine {
     return values;
   }
 
+  Future<Result> _offerReroll() async {
+    final rerollButton = new ButtonElement()
+      ..text = "$rerollEffectDescription?";
+    rerollEl.children.add(rerollButton);
+    final okayButton = new ButtonElement()..text = "Okay";
+    rerollEl.children.add(okayButton);
+
+    _rerollCompleter = new Completer<Result>();
+    StreamSubscription rerollSub, okaySub;
+    rerollSub = rerollButton.onClick.listen((_) {
+      _cancelButtons(rerollButton, rerollSub, okayButton, okaySub);
+      _wasRerolled = true;
+      _restartFailedReels();
+      _continueAnimation();
+    });
+    okaySub = okayButton.onClick.listen((_) {
+      _cancelButtons(rerollButton, rerollSub, okayButton, okaySub);
+      _rerollCompleter.complete(_currentResult);
+    });
+
+    return _rerollCompleter.future;
+  }
+
+  void _restartFailedReels() {
+    for (var reel in _reels) {
+      if (reel.currentResult) {
+        // Successful reel. Do not reroll.
+        continue;
+      }
+      reel.reroll();
+    }
+  }
+
+  Future<Result> _roll() {
+    assert(_rollCompleter == null, "Cannot roll one slot machine twice.");
+    _rollCompleter = new Completer<Result>();
+
+    Future
+        .wait([_successIcon.onLoad.first, _failureIcon.onLoad.first]).then((_) {
+      _update(0);
+    });
+
+    return _rollCompleter.future;
+  }
+
   void _switchOneNullToValue(
       List<bool> values, bool value, List<int> reelSuccessCounts) {
     int index = _random.nextInt(reelCount);
@@ -299,6 +414,11 @@ class SlotMachine {
 
     if (_reels.every((line) => line.isFinished)) {
       resultEl.text = _currentResultText;
+      if (_rerollCompleter != null) {
+        // We are in a reroll. Complete that.
+        _rerollCompleter.complete(_currentResult);
+        return;
+      }
       _rollCompleter.complete(_currentResult);
       return;
     }
@@ -323,10 +443,6 @@ class SlotMachine {
 
     resultEl.text = _currentResultText;
 
-    if (_animationFrame != null) {
-      _animationFrame().then(_update);
-    } else {
-      window.animationFrame.then(_update);
-    }
+    _continueAnimation();
   }
 }

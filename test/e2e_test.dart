@@ -33,17 +33,17 @@ void main() {
   test("a 90% predetermined to fail will always generate itself", () {
     for (int i = 0; i < 1000; i++) {
       expect(
-          () => new SlotMachine.fromProbability(0.9,
-                  predeterminedResult: Result.failure)
-              .roll(),
+          () => new SlotMachine(0.9,
+                  predeterminedFirstResult: Result.failure)
+              .play(),
           returnsNormally);
     }
   });
 
   test("a 100% predetermined to fail will throw", () {
     expect(
-        () => new SlotMachine.fromProbability(1.0,
-            predeterminedResult: Result.failure),
+        () => new SlotMachine(1.0,
+            predeterminedFirstResult: Result.failure),
         throwsArgumentError);
   });
 }
@@ -56,13 +56,14 @@ num _minFrameLength = 16.6;
 
 void _testResultAsPredetermined(Result result, num probability,
     _AnimationFrameProvider animationFrameProvider) {
-  final machine = new SlotMachine.fromProbability(probability,
-      predeterminedResult: result,
+  final machine = new SlotMachine(probability,
+      predeterminedFirstResult: result,
       animationFrame: animationFrameProvider.animationFrame);
   document.body.append(machine.canvasEl);
   document.body.append(machine.resultEl);
-  final rollResult = machine.roll();
-  expect(rollResult, completion(result));
+  final rollResult = machine.play();
+  final expectedResult = new SessionResult(result, false);
+  expect(rollResult, completion(expectedResult));
 }
 
 // ignore: one_member_abstracts

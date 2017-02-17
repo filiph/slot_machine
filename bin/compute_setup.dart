@@ -1,6 +1,6 @@
 import 'dart:math';
 
-import 'package:slot_machine/precomputed_setups.dart' show findClosest;
+import 'package:slot_machine/src/precomputed_setups.dart' show findClosest;
 
 void main() {
   // Brute force

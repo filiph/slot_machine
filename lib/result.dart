@@ -34,4 +34,13 @@ class SessionResult {
 
   @override
   String toString() => "SessionResult<$result,wasRerolled=$wasRerolled>";
+
+  @override
+  bool operator ==(Object other) =>
+      other is SessionResult &&
+      other.result == result &&
+      other.wasRerolled == wasRerolled;
+
+  @override
+  int get hashCode => (wasRerolled ? 2 : 1) * 100 + result.index;
 }
