@@ -342,9 +342,17 @@ class SlotMachine {
     return values;
   }
 
+  String _capitalize(String message) {
+    if (message.isEmpty) return message;
+    final buffer = new StringBuffer(message.substring(0, 1).toUpperCase());
+    if (message.length == 1) return buffer.toString();
+    buffer.write(message.substring(1));
+    return buffer.toString();
+  }
+
   Future<Result> _offerReroll() async {
     final rerollButton = new ButtonElement()
-      ..text = "$rerollEffectDescription?";
+      ..text = "${_capitalize(rerollEffectDescription)}?";
     rerollEl.children.add(rerollButton);
     final okayButton = new ButtonElement()..text = "Okay";
     rerollEl.children.add(okayButton);
