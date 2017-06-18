@@ -352,9 +352,12 @@ class SlotMachine {
 
   Future<Result> _offerReroll() async {
     final rerollButton = new ButtonElement()
-      ..text = "${_capitalize(rerollEffectDescription)}?";
+      ..classes.add("button")
+      ..text = "${_capitalize(rerollEffectDescription)} to reroll";
     rerollEl.children.add(rerollButton);
-    final okayButton = new ButtonElement()..text = "Okay";
+    final okayButton = new ButtonElement()
+      ..classes.add("button")
+      ..text = "Accept failure";
     rerollEl.children.add(okayButton);
 
     _rerollCompleter = new Completer<Result>();
