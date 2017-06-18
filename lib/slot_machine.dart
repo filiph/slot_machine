@@ -447,8 +447,9 @@ class SlotMachine {
     // Fade in.
     if (_timeOfStartOfRoll != null &&
         _lastTime - _timeOfStartOfRoll < _fadeInMilliseconds) {
-      _ctx.fillStyle = "rgba(255, 255, 255, "
+      final fillStyle = "rgba(255, 255, 255, "
           "${1 - (_lastTime - _timeOfStartOfRoll) / _fadeInMilliseconds})";
+      _ctx.fillStyle = fillStyle;
       _ctx.fillRect(0, 0, width * reelCount, _height * 3);
     }
 
