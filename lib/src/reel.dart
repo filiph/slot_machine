@@ -1,7 +1,9 @@
 part of slot_machine;
 
 class _Reel {
-  static const int minFullSpeedMilliseconds = 500;
+  static const int minFullSpeedMilliseconds = 100;
+
+  static const int fullSpeedMax = 1000;
 
   static const int _minInitialSpeed = 10000;
 
@@ -42,7 +44,7 @@ class _Reel {
 
   int speed;
 
-  int drag = 5;
+  int drag = 7;
 
   bool _isSlowingDown = false;
 
@@ -74,7 +76,8 @@ class _Reel {
       }
     }
 
-    fullSpeedMilliseconds = minFullSpeedMilliseconds + _random.nextInt(2000);
+    fullSpeedMilliseconds =
+        minFullSpeedMilliseconds + _random.nextInt(fullSpeedMax);
     speed = _minInitialSpeed + (_random.nextInt(_minInitialSpeed) / 10).round();
 
     if (predeterminedResult != null) {
