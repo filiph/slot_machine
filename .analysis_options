@@ -1,5 +1,7 @@
 analyzer:
   strong-mode: true
+  exclude:
+    - build/**
 linter:
   rules:
     - always_declare_return_types
