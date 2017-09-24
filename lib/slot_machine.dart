@@ -115,6 +115,10 @@ class SlotMachine {
 
   bool _wasRerolled = false;
 
+  /// The result for the first roll. If no reroll is available (or needed)
+  /// this will be the final result.
+  Result _firstResult;
+
   /// Create a slot machine animation with given [probability] of success.
   ///
   /// The first result of the session can be predetermined via
@@ -247,17 +251,25 @@ class SlotMachine {
   }
 
   /// Start the slot machine session. This will roll the reels to completion
-  /// once, and -- if [rerollable] is `true` -- it will also allow the
-  /// user to reroll.
+  /// once and will return the result of the first roll.
   ///
-  /// In any case, this method returns the final [SessionResult]. It can
-  /// only be called once.
-  Future<SessionResult> play() async {
-    final firstResult = await _roll();
-    if (firstResult == Result.criticalSuccess ||
-        firstResult == Result.success ||
+  /// If you want the slot machine to offer a reroll, use [rerollIfNeeded]
+  /// after this method has completed. You don't need to worry about whether
+  /// the reroll is actually called for -- the method will figure it out.
+  Future<Result> play() async {
+    _firstResult = await _roll();
+    return _firstResult;
+  }
+
+  /// This method returns the final [SessionResult]. It may allow the user
+  /// to reroll if that is needed.
+  Future<SessionResult> rerollIfNeeded() async {
+    assert(_firstResult != null,
+        "You must call play() before calling rerollIfNeeded().");
+    if (_firstResult == Result.criticalSuccess ||
+        _firstResult == Result.success ||
         !rerollable) {
-      return new SessionResult(firstResult, false);
+      return new SessionResult(_firstResult, false);
     }
     final secondResult = await _offerReroll();
     return new SessionResult(secondResult, _wasRerolled);
@@ -273,6 +285,14 @@ class SlotMachine {
     okaySub.cancel();
     rerollButton.disabled = true;
     okayButton.disabled = true;
+  }
+
+  String _capitalize(String message) {
+    if (message.isEmpty) return message;
+    final buffer = new StringBuffer(message.substring(0, 1).toUpperCase());
+    if (message.length == 1) return buffer.toString();
+    buffer.write(message.substring(1));
+    return buffer.toString();
   }
 
   void _continueAnimation() {
@@ -340,14 +360,6 @@ class SlotMachine {
     }
 
     return values;
-  }
-
-  String _capitalize(String message) {
-    if (message.isEmpty) return message;
-    final buffer = new StringBuffer(message.substring(0, 1).toUpperCase());
-    if (message.length == 1) return buffer.toString();
-    buffer.write(message.substring(1));
-    return buffer.toString();
   }
 
   Future<Result> _offerReroll() async {

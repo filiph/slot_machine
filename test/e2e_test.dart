@@ -61,7 +61,8 @@ void _testResultAsPredetermined(Result result, num probability,
       animationFrame: animationFrameProvider.animationFrame);
   document.body.append(machine.canvasEl);
   document.body.append(machine.resultEl);
-  final rollResult = machine.play();
+
+  final rollResult = machine.play().then((_) => machine.rerollIfNeeded());
   final expectedResult = new SessionResult(result, false);
   expect(rollResult, completion(expectedResult));
 }
