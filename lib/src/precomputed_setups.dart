@@ -40,7 +40,7 @@ const Map<num, List<int>> precomputedSetups = const {
 /// When there are several numbers with the same delta to [target], the last
 /// one is taken.
 num findClosest(num target, Iterable<num> list) {
-  num min = double.INFINITY;
+  num min = double.infinity;
   num closest;
 
   for (num v in list) {

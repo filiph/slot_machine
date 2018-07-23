@@ -1,4 +1,4 @@
-@TestOn("dartium || browser")
+@TestOn("browser")
 import 'dart:async';
 import 'dart:html';
 

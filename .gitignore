@@ -2,5 +2,6 @@
 .packages
 .pub/
 build/
+.dart_tool/
 pubspec.lock
 .DS_Store
