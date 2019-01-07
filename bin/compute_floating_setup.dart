@@ -5,9 +5,25 @@ library compute_floating_setup;
 import 'dart:math';
 
 void main() {
-  for (int i = 0; i <= 100; i++) {
-    final p = i / 100;
-    print('$p, ${computeTotalProbability(p)}');
+  int resolution = 1000000;
+  final map = <double, double>{};
+  for (int i = 0; i <= resolution; i++) {
+    final p = i / resolution;
+    final totalP = computeTotalProbability(p);
+    map[totalP] = p;
+    // print('$p\t$totalP');
+  }
+
+  for (int percentage = 0; percentage <= 100; percentage++) {
+    final p = percentage / 100;
+    final closestTotal =
+        map.keys.fold<double>(double.infinity, (double prev, el) {
+          final currentDiff = (el - p).abs();
+          final prevDiff = (prev - p).abs();
+          return currentDiff < prevDiff ? el : prev;
+        });
+    // print('$p\t${map[closestTotal]}\t$closestTotal');
+    print('$percentage: ${map[closestTotal]},');
   }
 }
 
@@ -15,7 +31,7 @@ double computeTotalProbability(double wheelProbability, [int wheelCount = 5]) {
   final possibleResults = getPossibleResults(wheelCount);
 
   // print("count: ${possibleResults.length}");
-  
+
   // print(possibleResults);
   // print(possibleResults.where((result) => result.isWinning).length);
 
